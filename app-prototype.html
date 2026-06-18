@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuoteCraft App Prototype</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --shell: #fcfaf5;
+      --card: rgba(255, 252, 246, 0.84);
+      --card-strong: #fffdfa;
+      --line: rgba(36, 50, 45, 0.1);
+      --text: #15211d;
+      --muted: #61706a;
+      --green: #165847;
+      --green-soft: #dceadf;
+      --navy: #1b3556;
+      --gold: #c78d3b;
+      --rose: #eadfd3;
+      --shadow: 0 28px 70px rgba(31, 37, 31, 0.12);
+      --radius-xl: 34px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --font-ui: "Aptos", "PingFang SC", "Microsoft YaHei UI", "Noto Sans SC", sans-serif;
+      --font-display: "Bahnschrift", "Trebuchet MS", var(--font-ui);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-ui);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 18%, rgba(22, 88, 71, 0.17), transparent 26%),
+        radial-gradient(circle at 86% 12%, rgba(27, 53, 86, 0.14), transparent 24%),
+        linear-gradient(180deg, #f7f2ea 0%, #f1ebe2 100%);
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(21, 33, 29, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(21, 33, 29, 0.035) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 88%);
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    .layout {
+      width: min(1380px, calc(100% - 28px));
+      margin: 22px auto;
+      display: grid;
+      grid-template-columns: minmax(320px, 470px) minmax(320px, 420px) minmax(260px, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid rgba(255, 255, 255, 0.78);
+      border-radius: 30px;
+      background: rgba(255, 248, 241, 0.72);
+      backdrop-filter: blur(18px);
+      box-shadow: var(--shadow);
+    }
+
+    .story {
+      padding: 28px;
+      min-height: calc(100vh - 44px);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(22, 88, 71, 0.08);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    p {
+      margin: 0;
+    }
+
+    .story h1 {
+      margin-top: 18px;
+      font-family: var(--font-display);
+      font-size: clamp(38px, 5vw, 58px);
+      line-height: 0.98;
+      letter-spacing: -0.05em;
+    }
+
+    .story p.lead {
+      margin-top: 16px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .story-block {
+      margin-top: 22px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 253, 249, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .story-block h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+
+    .story-block p {
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .chip-row,
+    .switch-row,
+    .stat-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .chip,
+    .switch {
+      padding: 11px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.84);
+      color: var(--muted);
+      cursor: pointer;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    }
+
+    .switch.active,
+    .chip.active {
+      background: linear-gradient(135deg, rgba(22, 88, 71, 0.14), rgba(27, 53, 86, 0.1));
+      color: var(--text);
+      border-color: rgba(22, 88, 71, 0.2);
+    }
+
+    .switch:hover,
+    .chip:hover {
+      transform: translateY(-1px);
+    }
+
+    .metric {
+      flex: 1 1 120px;
+      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(250, 244, 235, 0.8));
+      border: 1px solid var(--line);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-family: var(--font-display);
+      font-size: 28px;
+      letter-spacing: -0.04em;
+    }
+
+    .phone-zone {
+      padding: 18px;
+      display: flex;
+      justify-content: center;
+      min-height: calc(100vh - 44px);
+    }
+
+    .phone {
+      width: min(100%, 390px);
+      padding: 12px;
+      border-radius: 42px;
+      background:
+        linear-gradient(180deg, #151d21, #25343d),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent);
+      box-shadow: 0 32px 56px rgba(20, 30, 33, 0.28);
+    }
+
+    .screen-shell {
+      overflow: hidden;
+      min-height: 820px;
+      border-radius: 32px;
+      background: linear-gradient(180deg, #f8f3ea 0%, #f4eee5 100%);
+      position: relative;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px 8px;
+      color: #4d5b56;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mobile-header {
+      padding: 12px 20px 6px;
+    }
+
+    .mobile-header h2 {
+      margin-top: 10px;
+      font-size: 30px;
+      line-height: 1.04;
+      letter-spacing: -0.04em;
+      font-family: var(--font-display);
+    }
+
+    .mobile-header p {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .screen {
+      display: none;
+      padding: 0 18px 96px;
+      animation: floatin 240ms ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes floatin {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .mobile-card {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 24px;
+      background: rgba(255, 253, 249, 0.88);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 12px 24px rgba(24, 33, 31, 0.06);
+    }
+
+    .mobile-card.dark {
+      color: #f7f9f7;
+      background: linear-gradient(145deg, #17344f, #1b6554);
+    }
+
+    .mobile-card.dark p,
+    .mobile-card.dark span {
+      color: rgba(244, 248, 246, 0.78);
+    }
+
+    .mobile-card h3 {
+      font-size: 18px;
+    }
+
+    .mobile-card p {
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .field {
+      margin-top: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      color: var(--text);
+      outline: none;
+    }
+
+    .field textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 180ms ease, opacity 180ms ease;
+    }
+
+    .button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.primary {
+      color: #f8fbf9;
+      background: linear-gradient(135deg, #174536, #2c7864);
+      box-shadow: 0 16px 24px rgba(22, 88, 71, 0.2);
+    }
+
+    .button.secondary {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid var(--line);
+    }
+
+    .project-list,
+    .quote-list,
+    .scope-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .project-item,
+    .quote-item,
+    .scope-item {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(247, 243, 235, 0.82);
+      border: 1px solid rgba(36, 50, 45, 0.08);
+    }
+
+    .project-item strong,
+    .quote-item strong,
+    .scope-item strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .project-item span,
+    .quote-item span,
+    .scope-item span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(22, 88, 71, 0.1);
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .stats-mini {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .stats-mini .mini {
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .stats-mini .mini strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 22px;
+      margin-top: 6px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .price {
+      font-family: var(--font-display);
+      font-size: 24px;
+      letter-spacing: -0.04em;
+      color: var(--green);
+    }
+
+    .quote-item input {
+      width: 84px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+    }
+
+    .quote-item .line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .quote-total {
+      margin-top: 14px;
+      padding: 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(22, 88, 71, 0.12), rgba(199, 141, 59, 0.08));
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+
+    .quote-total span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .quote-total strong {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--green);
+    }
+
+    .customer-sheet {
+      background: #fffdfa;
+      border-radius: 28px;
+      padding: 20px;
+      border: 1px solid rgba(36, 50, 45, 0.08);
+    }
+
+    .sheet-header {
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(36, 50, 45, 0.1);
+    }
+
+    .sheet-header h3 {
+      margin-top: 10px;
+      font-size: 26px;
+      line-height: 1.06;
+      font-family: var(--font-display);
+    }
+
+    .sheet-header p {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .sheet-section {
+      margin-top: 18px;
+    }
+
+    .sheet-section h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--green);
+    }
+
+    .sheet-section p {
+      margin-top: 8px;
+      color: #33413c;
+      line-height: 1.8;
+      font-size: 13px;
+    }
+
+    .sheet-total {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #dfede2, #f7efe3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sheet-total strong {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--green);
+    }
+
+    .bottom-bar {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      left: 16px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+      border-radius: 24px;
+      background: rgba(255, 252, 246, 0.9);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.88);
+      box-shadow: 0 16px 24px rgba(25, 35, 31, 0.1);
+    }
+
+    .tab {
+      display: grid;
+      gap: 4px;
+      place-items: center;
+      padding: 10px 8px;
+      border-radius: 16px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+      font-size: 11px;
+      text-align: center;
+    }
+
+    .tab strong {
+      font-size: 16px;
+      font-family: var(--font-display);
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, rgba(22, 88, 71, 0.16), rgba(27, 53, 86, 0.1));
+      color: var(--text);
+    }
+
+    .notes {
+      padding: 24px;
+      min-height: calc(100vh - 44px);
+    }
+
+    .notes h2 {
+      margin-top: 16px;
+      font-size: 26px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      font-family: var(--font-display);
+    }
+
+    .note-card {
+      margin-top: 16px;
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255, 253, 249, 0.8);
+      border: 1px solid var(--line);
+    }
+
+    .note-card h3 {
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    .note-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .note-card ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    @media (max-width: 1220px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .story,
+      .phone-zone,
+      .notes {
+        min-height: auto;
+      }
+
+      .phone-zone {
+        order: -1;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .layout {
+        width: min(100%, calc(100% - 12px));
+        gap: 14px;
+        margin: 8px auto 18px;
+      }
+
+      .story,
+      .notes {
+        padding: 20px;
+      }
+
+      .phone {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <section class="panel story">
+      <div class="eyebrow">App Prototype</div>
+      <h1>给业务端的报价 App，不像后台，更像随身商务工作台。</h1>
+      <p class="lead">这套原型把 QuoteCraft 做成偏移动端的轻量 SaaS App，适合老板、销售、项目经理在微信、电话、拜访、地铁和会议间隙快速整理需求、生成方案、分享给客户。</p>
+
+      <div class="story-block">
+        <h3>这套 App 解决什么问题</h3>
+        <p>它不是完整 CRM，也不是项目管理器，而是聚焦报价闭环本身：创建项目、整理需求、组合报价项、让 AI 帮忙润色、最后一键分享专业方案。</p>
+        <div class="chip-row">
+          <div class="chip active">移动端优先</div>
+          <div class="chip">客户沟通场景</div>
+          <div class="chip">快速生成方案</div>
+          <div class="chip">即时分享</div>
+        </div>
+      </div>
+
+      <div class="story-block">
+        <h3>切换原型页面</h3>
+        <p>左侧是设计说明，中间手机里是实际页面。你可以点这里或者直接点手机底部导航切换。</p>
+        <div class="switch-row">
+          <button class="switch active" data-screen-target="login">登录</button>
+          <button class="switch" data-screen-target="workspace">工作台</button>
+          <button class="switch" data-screen-target="builder">报价编辑</button>
+          <button class="switch" data-screen-target="share">分享预览</button>
+        </div>
+      </div>
+
+      <div class="stat-row">
+        <div class="metric">
+          <span>适用角色</span>
+          <strong>销售 / 老板</strong>
+        </div>
+        <div class="metric">
+          <span>核心动作</span>
+          <strong>快建快发</strong>
+        </div>
+        <div class="metric">
+          <span>设备倾向</span>
+          <strong>Mobile First</strong>
+        </div>
+      </div>
+
+      <div class="story-block">
+        <h3>体验基调</h3>
+        <p>视觉上不走“科技蓝后台”，而是更像高端咨询顾问工具。底色偏米白纸张感，搭配墨绿和深蓝，让业务端使用时看起来更稳、更值钱。</p>
+      </div>
+    </section>
+
+    <section class="panel phone-zone">
+      <div class="phone">
+        <div class="screen-shell">
+          <div class="status-bar">
+            <span>9:41</span>
+            <span>QuoteCraft App</span>
+            <span>5G 92%</span>
+          </div>
+
+          <div class="screen active" data-screen="login">
+            <div class="mobile-header">
+              <div class="eyebrow">Quick Access</div>
+              <h2>10 分钟发出一份像样的报价方案</h2>
+              <p>移动端登录页需要足够克制，先讲价值，再给出低成本登录动作。</p>
+            </div>
+
+            <div class="mobile-card dark">
+              <h3>把零散需求整理成专业提案</h3>
+              <p>支持项目创建、AI 文案辅助、模板预览、分享链接和 PDF 输出，适合外包团队与独立开发者的随手工作流。</p>
+            </div>
+
+            <div class="mobile-card">
+              <h3>邮箱登录</h3>
+              <div class="field">
+                <label for="appEmail">工作邮箱</label>
+                <input id="appEmail" type="email" value="hello@quotecraft.cn">
+              </div>
+              <div class="button-row">
+                <button class="button primary" data-screen-target="workspace">发送登录链接</button>
+                <button class="button secondary" data-screen-target="workspace">体验示例项目</button>
+              </div>
+            </div>
+
+            <div class="mobile-card">
+              <h3>首版能力</h3>
+              <div class="scope-list">
+                <div class="scope-item">
+                  <strong>快速新建项目</strong>
+                  <span>录入客户、项目类型、联系人与原始需求。</span>
+                </div>
+                <div class="scope-item">
+                  <strong>组合报价项</strong>
+                  <span>复用常用模块，自动计算总价，减少错项漏项。</span>
+                </div>
+                <div class="scope-item">
+                  <strong>一键分享给客户</strong>
+                  <span>无需客户登录，打开链接就能看完整方案。</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="screen" data-screen="workspace">
+            <div class="mobile-header">
+              <div class="eyebrow">Workspace</div>
+              <h2>项目工作台</h2>
+              <p>把“今天要发出去的方案”放在最前面，而不是让用户先面对复杂菜单。</p>
+            </div>
+
+            <div class="mobile-card dark">
+              <div class="row">
+                <div>
+                  <h3>下午 4 点前完成 2 份方案</h3>
+                  <p>你今天有 1 个客户待分享，1 个历史项目待复用。</p>
+                </div>
+                <div class="badge">自动保存</div>
+              </div>
+              <div class="stats-mini">
+                <div class="mini">
+                  <span>草稿</span>
+                  <strong>08</strong>
+                </div>
+                <div class="mini">
+                  <span>已分享</span>
+                  <strong>12</strong>
+                </div>
+                <div class="mini">
+                  <span>成单</span>
+                  <strong>4</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-card">
+              <div class="row">
+                <h3>我的项目</h3>
+                <button class="button secondary" data-screen-target="builder">+ 新建</button>
+              </div>
+              <div class="project-list">
+                <div class="project-item">
+                  <strong>教育品牌官网升级</strong>
+                  <span>清林教育 · 官网开发 · 今日 14:20 更新 · 总额 ¥38,000</span>
+                </div>
+                <div class="project-item">
+                  <strong>会员小程序二期</strong>
+                  <span>北岸零售 · 小程序开发 · 已分享给客户 · 总额 ¥56,800</span>
+                </div>
+                <div class="project-item">
+                  <strong>工作室官网 + 后台</strong>
+                  <span>造物空间 · 复用历史模板可直接二次编辑。</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mobile-card">
+              <h3>快捷动作</h3>
+              <div class="button-row">
+                <button class="button primary" data-screen-target="builder">继续编辑报价</button>
+                <button class="button secondary" data-screen-target="share">查看客户页</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="screen" data-screen="builder">
+            <div class="mobile-header">
+              <div class="eyebrow">Builder</div>
+              <h2>随时把需求变成可发送的报价</h2>
+              <p>这一页压缩了 PRD 里的编辑项目页，只保留移动端最常用的字段与高频操作。</p>
+            </div>
+
+            <div class="mobile-card">
+              <h3>项目基础信息</h3>
+              <div class="field">
+                <label for="appTitle">项目名称</label>
+                <input id="appTitle" type="text" value="教育品牌官网升级">
+              </div>
+              <div class="field">
+                <label for="appSummary">项目简介</label>
+                <textarea id="appSummary">为清林教育搭建一套兼顾品牌展示、课程转化与线索收集的官网系统，提升咨询转化效率。</textarea>
+              </div>
+            </div>
+
+            <div class="mobile-card">
+              <div class="row">
+                <h3>报价项</h3>
+                <div class="badge">实时合计</div>
+              </div>
+              <div class="quote-list">
+                <div class="quote-item" data-item>
+                  <strong>官网策划与信息架构</strong>
+                  <span>梳理页面结构与转化路径</span>
+                  <div class="line">
+                    <span>单价 ¥6,000</span>
+                    <input class="qty" type="number" value="1" min="0">
+                  </div>
+                </div>
+                <div class="quote-item" data-item>
+                  <strong>UI 视觉设计</strong>
+                  <span>首页、课程页、案例页和联系页设计</span>
+                  <div class="line">
+                    <span>单价 ¥8,000</span>
+                    <input class="qty" type="number" value="1" min="0">
+                  </div>
+                </div>
+                <div class="quote-item" data-item>
+                  <strong>前端开发</strong>
+                  <span>响应式页面与交互开发</span>
+                  <div class="line">
+                    <span>单价 ¥12,000</span>
+                    <input class="qty" type="number" value="1" min="0">
+                  </div>
+                </div>
+                <div class="quote-item" data-item>
+                  <strong>CMS 配置与上线支持</strong>
+                  <span>后台字段配置、测试修正与上线培训</span>
+                  <div class="line">
+                    <span>单价 ¥6,000</span>
+                    <input class="qty" type="number" value="2" min="0">
+                  </div>
+                </div>
+              </div>
+
+              <div class="quote-total">
+                <span>方案总金额</span>
+                <strong id="appTotal">¥38,000</strong>
+              </div>
+            </div>
+
+            <div class="mobile-card dark">
+              <h3>AI 辅助文案</h3>
+              <p>建议生成一段更商务的项目简介，突出“品牌形象统一”“课程转化效率提升”“后续扩展便捷”。</p>
+              <div class="button-row">
+                <button class="button secondary">生成项目简介</button>
+                <button class="button secondary">生成服务范围</button>
+              </div>
+            </div>
+
+            <div class="button-row">
+              <button class="button primary" data-screen-target="share">生成分享页</button>
+              <button class="button secondary">导出 PDF</button>
+            </div>
+          </div>
+
+          <div class="screen" data-screen="share">
+            <div class="mobile-header">
+              <div class="eyebrow">Client View</div>
+              <h2>发给客户时，界面应该像正式方案，不像工具页面</h2>
+              <p>面向客户的分享页不暴露编辑能力，只保留阅读、总价确认和联系信息。</p>
+            </div>
+
+            <div class="customer-sheet">
+              <div class="sheet-header">
+                <div class="badge">公开只读链接</div>
+                <h3 id="shareTitle">教育品牌官网升级方案</h3>
+                <p id="shareSummary">为清林教育搭建一套兼顾品牌展示、课程转化与线索收集的官网系统，帮助客户统一线上形象并提升招生咨询效率。</p>
+              </div>
+
+              <div class="sheet-section">
+                <h4>服务范围</h4>
+                <p>信息架构梳理、页面视觉设计、响应式前端开发、CMS 配置、测试上线支持。</p>
+              </div>
+
+              <div class="sheet-section">
+                <h4>报价明细</h4>
+                <div class="scope-list">
+                  <div class="scope-item">
+                    <strong>官网策划与信息架构</strong>
+                    <span>梳理内容与转化路径。</span>
+                  </div>
+                  <div class="scope-item">
+                    <strong>UI 视觉设计</strong>
+                    <span>首页、课程页、案例页和联系页设计。</span>
+                  </div>
+                  <div class="scope-item">
+                    <strong>前端开发与上线支持</strong>
+                    <span>响应式开发、CMS 配置、测试修正与培训。</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sheet-total">
+                <span>项目总金额</span>
+                <strong id="shareTotal">¥38,000</strong>
+              </div>
+
+              <div class="sheet-section">
+                <h4>工期与交付</h4>
+                <p>预计 4 周完成，交付设计稿、前端代码、部署说明、测试清单和一次交付培训。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bottom-bar">
+            <div class="tab active" data-screen-target="login">
+              <strong>01</strong>
+              <span>登录</span>
+            </div>
+            <div class="tab" data-screen-target="workspace">
+              <strong>02</strong>
+              <span>工作台</span>
+            </div>
+            <div class="tab" data-screen-target="builder">
+              <strong>03</strong>
+              <span>报价</span>
+            </div>
+            <div class="tab" data-screen-target="share">
+              <strong>04</strong>
+              <span>分享</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel notes">
+      <div class="eyebrow">Product Notes</div>
+      <h2>为什么 App 原型要这样切</h2>
+
+      <div class="note-card">
+        <h3>适合谁来用</h3>
+        <p>更适合业务前线角色，而不是财务或运营。它强调“我现在就要发报价给客户”，所以工作流必须短、按钮必须直接、预览必须贴近结果。</p>
+      </div>
+
+      <div class="note-card">
+        <h3>页面设计策略</h3>
+        <ul>
+          <li>登录页只保留价值说明和邮箱入口，符合 PRD 的 MVP 登录范围。</li>
+          <li>工作台先展示待处理项目和快捷动作，降低移动端操作成本。</li>
+          <li>编辑页压缩字段密度，把完整表单拆成更适合手机的卡片结构。</li>
+          <li>分享页像一份移动端可阅读的商务方案，而不是 H5 活动页。</li>
+        </ul>
+      </div>
+
+      <div class="note-card">
+        <h3>后续可继续扩展</h3>
+        <p>如果你后面要继续推进，我可以把这一套 App 原型再细化成完整的移动端页面流，包括消息提醒、模板切换、AI 生成弹层、分享记录和订阅升级路径。</p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const screenButtons = document.querySelectorAll("[data-screen-target]");
+    const screens = document.querySelectorAll("[data-screen]");
+    const tabs = document.querySelectorAll(".tab");
+    const switches = document.querySelectorAll(".switch");
+    const qtyInputs = document.querySelectorAll(".qty");
+    const appTitle = document.getElementById("appTitle");
+    const appSummary = document.getElementById("appSummary");
+    const shareTitle = document.getElementById("shareTitle");
+    const shareSummary = document.getElementById("shareSummary");
+    const appTotal = document.getElementById("appTotal");
+    const shareTotal = document.getElementById("shareTotal");
+    const unitPrices = [6000, 8000, 12000, 6000];
+
+    function activateScreen(name) {
+      screens.forEach((screen) => {
+        screen.classList.toggle("active", screen.dataset.screen === name);
+      });
+
+      tabs.forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.screenTarget === name);
+      });
+
+      switches.forEach((button) => {
+        button.classList.toggle("active", button.dataset.screenTarget === name);
+      });
+    }
+
+    function formatMoney(value) {
+      return `¥${Number(value).toLocaleString("zh-CN")}`;
+    }
+
+    function refreshTotal() {
+      let total = 0;
+      qtyInputs.forEach((input, index) => {
+        total += (Number(input.value) || 0) * unitPrices[index];
+      });
+
+      const money = formatMoney(total);
+      appTotal.textContent = money;
+      shareTotal.textContent = money;
+    }
+
+    function refreshShareCopy() {
+      shareTitle.textContent = `${appTitle.value || "未命名项目"}方案`;
+      shareSummary.textContent = appSummary.value || "请先在报价编辑页填写项目简介。";
+    }
+
+    screenButtons.forEach((button) => {
+      button.addEventListener("click", () => activateScreen(button.dataset.screenTarget));
+    });
+
+    qtyInputs.forEach((input) => input.addEventListener("input", refreshTotal));
+    appTitle.addEventListener("input", refreshShareCopy);
+    appSummary.addEventListener("input", refreshShareCopy);
+
+    refreshTotal();
+    refreshShareCopy();
+  </script>
+</body>
+</html>
