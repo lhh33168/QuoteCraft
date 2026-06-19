@@ -1,12 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+import { createBrowserClient } from "@supabase/ssr";
+import { getSupabasePublishableKey, getSupabaseUrl } from "@/server/supabase/keys";
 
 export function getSupabaseBrowserClient() {
-  if (!supabaseUrl || !supabaseAnonKey) {
+  const supabaseUrl = getSupabaseUrl();
+  const supabasePublishableKey = getSupabasePublishableKey();
+
+  if (!supabaseUrl || !supabasePublishableKey) {
     throw new Error("Missing Supabase browser environment variables.");
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, supabasePublishableKey);
 }

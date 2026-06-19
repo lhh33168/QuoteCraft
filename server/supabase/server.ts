@@ -1,9 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { env } from "@/server/config/env";
+import { getSupabaseServerDataKey, getSupabaseUrl } from "@/server/supabase/keys";
 
 export function getSupabaseServerClient() {
-  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL;
-  const serverKey = env.SUPABASE_SERVICE_ROLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = getSupabaseUrl();
+  const serverKey = getSupabaseServerDataKey();
 
   if (!supabaseUrl || !serverKey) {
     return null;

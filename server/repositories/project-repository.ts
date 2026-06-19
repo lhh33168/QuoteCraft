@@ -130,7 +130,22 @@ export const projectRepository = {
       }
     }
 
-    return payload;
+    const totalPrice = calculateProjectTotal(payload.quoteItems);
+
+    return {
+      project: {
+        ...payload.project,
+        id: payload.project.id === "new-project" ? `mock-${Date.now()}` : payload.project.id,
+        totalPrice,
+        status: payload.project.status || "draft"
+      },
+      quoteItems: payload.quoteItems.map((item, index) => ({
+        ...item,
+        id: item.id || `mock-item-${index + 1}`,
+        sortOrder: index + 1,
+        subtotal: Number(item.unitPrice || 0) * Number(item.quantity || 0)
+      }))
+    };
   },
   async update(id: string, userId: string, payload: ProjectDetail) {
     const supabase = getSupabaseServerClient();
@@ -191,7 +206,21 @@ export const projectRepository = {
       }
     }
 
-    return payload;
+    const totalPrice = calculateProjectTotal(payload.quoteItems);
+
+    return {
+      project: {
+        ...payload.project,
+        id,
+        totalPrice
+      },
+      quoteItems: payload.quoteItems.map((item, index) => ({
+        ...item,
+        id: item.id || `mock-item-${index + 1}`,
+        sortOrder: index + 1,
+        subtotal: Number(item.unitPrice || 0) * Number(item.quantity || 0)
+      }))
+    };
   },
   async remove(id: string, userId: string) {
     const supabase = getSupabaseServerClient();

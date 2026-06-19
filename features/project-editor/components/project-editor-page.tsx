@@ -13,7 +13,7 @@ export function ProjectEditorPage({ mode, initialState }: ProjectEditorPageProps
       title={mode === "create" ? "创建报价项目" : "编辑报价项目"}
       description="移动端优先编辑器骨架：基础信息、项目说明、报价项、AI 辅助与分享输出都从这里进入。"
     >
-      <ProjectEditorClient initialState={initialState} />
+      <ProjectEditorClient initialState={initialState} mode={mode} />
     </AppShell>
   );
 }

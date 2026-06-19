@@ -3,6 +3,7 @@ import { AppShell } from "@/shared/ui/app-shell";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { Project } from "@/shared/types/project";
+import { ProjectListActions } from "@/features/workspace/components/project-list-actions";
 
 type WorkspacePageProps = {
   projects: Project[];
@@ -88,6 +89,9 @@ export function WorkspacePage({ projects }: WorkspacePageProps) {
                   >
                     查看客户页
                   </Link>
+                </div>
+                <div className="mt-4">
+                  <ProjectListActions projectId={project.id} />
                 </div>
               </article>
             ))}
