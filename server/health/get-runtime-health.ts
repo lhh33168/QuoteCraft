@@ -1,5 +1,11 @@
 import { env } from "@/server/config/env";
-import { getSupabasePublishableKey, getSupabaseServerDataKey, getSupabaseUrl } from "@/server/supabase/keys";
+import {
+  getSupabasePublishableKey,
+  getSupabaseServerDataKey,
+  getSupabaseUrl,
+  isSupabaseBrowserConfigured,
+  isSupabaseServerConfigured
+} from "@/server/supabase/keys";
 
 export function getRuntimeHealth() {
   const supabaseUrl = getSupabaseUrl();
@@ -15,8 +21,8 @@ export function getRuntimeHealth() {
       hasUrl: Boolean(supabaseUrl),
       hasPublishableKey: Boolean(supabasePublishableKey),
       hasServerKey: Boolean(supabaseServerKey),
-      browserConfigured: Boolean(supabaseUrl && supabasePublishableKey),
-      serverConfigured: Boolean(supabaseUrl && supabaseServerKey)
+      browserConfigured: isSupabaseBrowserConfigured(),
+      serverConfigured: isSupabaseServerConfigured()
     },
     openai: {
       hasApiKey: Boolean(env.OPENAI_API_KEY),

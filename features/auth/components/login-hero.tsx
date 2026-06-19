@@ -5,10 +5,15 @@ export function LoginHero() {
       <div className="absolute bottom-[-80px] left-[-20px] h-56 w-56 rounded-full bg-[#f7c66a]/20 blur-3xl" />
 
       <div className="relative">
-        <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">Quick Access</div>
-        <h1 className="mt-5 max-w-xl font-display text-4xl leading-none sm:text-6xl">10 分钟整理需求，快速发出专业报价方案</h1>
+        <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+          Quick Access
+        </div>
+        <h1 className="mt-5 max-w-xl font-display text-4xl leading-none sm:text-6xl">
+          10 分钟整理需求，快速发出专业报价方案
+        </h1>
         <p className="mt-5 max-w-xl text-sm leading-7 text-white/80 sm:text-base sm:leading-8">
-          从客户需求收集、项目结构整理，到 AI 辅助文案、报价明细与分享交付，QuoteCraft 帮你把方案输出流程收进一套轻量工作台里。
+          从客户需求收集、项目结构整理，到 AI 辅助文案、报价明细与分享交付，QuoteCraft
+          帮你把方案输出流程收进一套轻量工作台里。
         </p>
 
         <div className="mt-8 grid gap-3 sm:grid-cols-3">

@@ -5,6 +5,7 @@ import type { Route } from "next";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LoginStatus } from "@/features/auth/components/login-status";
+import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
 
 type LoginStep = "request-code" | "verify-code";
 
@@ -54,8 +55,8 @@ export function LoginFormCard() {
   const trimmedEmail = email.trim();
   const emailValid = isValidEmail(trimmedEmail);
   const emailInvalid = emailTouched && trimmedEmail.length > 0 && !emailValid;
-  const otpInvalid = otpTouched && otpCode.length > 0 && otpCode.length < 6;
-  const otpDigits = Array.from({ length: 6 }, (_, index) => otpCode[index] ?? "");
+  const otpInvalid = otpTouched && otpCode.length > 0 && otpCode.length < EMAIL_OTP_LENGTH;
+  const otpDigits = Array.from({ length: EMAIL_OTP_LENGTH }, (_, index) => otpCode[index] ?? "");
   const stepProgress = step === "request-code" ? "50%" : "100%";
 
   function setError(message: string) {
@@ -134,7 +135,7 @@ export function LoginFormCard() {
     }
 
     if (!captcha) {
-      setError("登录校验题尚未准备好，请稍后再试。");
+      setError("登录校验题还没有准备好，请稍后再试。");
       return;
     }
 
@@ -187,7 +188,7 @@ export function LoginFormCard() {
         setOtpTouched(false);
         setStatus({
           kind: "success",
-          message: data.message ?? "验证码已发送，请前往邮箱查看 6 位数字验证码。"
+          message: data.message ?? `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码。`
         });
       } catch {
         setStatus({
@@ -247,8 +248,8 @@ export function LoginFormCard() {
     event.preventDefault();
     setOtpTouched(true);
 
-    if (otpCode.length !== 6) {
-      setError("请输入完整的 6 位验证码。");
+    if (otpCode.length !== EMAIL_OTP_LENGTH) {
+      setError(`请输入完整的 ${EMAIL_OTP_LENGTH} 位验证码。`);
       return;
     }
 
@@ -261,17 +262,20 @@ export function LoginFormCard() {
     setOtpTouched(false);
     setStatus({
       kind: "idle",
-      message: cooldownSeconds > 0 ? `验证码已发送到 ${lastSentEmail}，请等待 ${cooldownSeconds} 秒后再重新发送。` : "你可以修改邮箱或重新发送验证码。"
+      message:
+        cooldownSeconds > 0
+          ? `验证码已发送到 ${lastSentEmail}，请等待 ${cooldownSeconds} 秒后再重新发送。`
+          : "你可以修改邮箱，或重新发送一封新的验证码邮件。"
     });
   }
 
   function handleOtpChange(value: string) {
     setOtpTouched(true);
-    setOtpCode(value.replace(/\D/g, "").slice(0, 6));
+    setOtpCode(value.replace(/\D/g, "").slice(0, EMAIL_OTP_LENGTH));
   }
 
   function handleOtpPaste(event: React.ClipboardEvent<HTMLInputElement>) {
-    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = event.clipboardData.getData("text").replace(/\D/g, "").slice(0, EMAIL_OTP_LENGTH);
 
     if (!pasted) {
       return;
@@ -283,7 +287,7 @@ export function LoginFormCard() {
   }
 
   useEffect(() => {
-    if (step !== "verify-code" || otpCode.length !== 6 || isPending) {
+    if (step !== "verify-code" || otpCode.length !== EMAIL_OTP_LENGTH || isPending) {
       return;
     }
 
@@ -307,7 +311,9 @@ export function LoginFormCard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-3xl text-ink">邮箱登录</h2>
-          <p className="mt-3 max-w-md text-sm leading-7 text-muted">输入工作邮箱并完成基础校验后获取验证码，再输入 6 位数字完成登录。</p>
+          <p className="mt-3 max-w-md text-sm leading-7 text-muted">
+            输入工作邮箱并完成基础校验后获取验证码，再输入 {EMAIL_OTP_LENGTH} 位数字验证码完成登录。
+          </p>
         </div>
         <div className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted sm:px-4">
           <span>步骤</span>
@@ -321,7 +327,10 @@ export function LoginFormCard() {
           <span>{step === "request-code" ? "填写邮箱" : "输入验证码"}</span>
         </div>
         <div className="h-2 rounded-full bg-black/5">
-          <div className="h-full rounded-full bg-gradient-to-r from-[#1b5e54] to-[#2f8b71] transition-all duration-300" style={{ width: stepProgress }} />
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[#1b5e54] to-[#2f8b71] transition-all duration-300"
+            style={{ width: stepProgress }}
+          />
         </div>
       </div>
 
@@ -345,8 +354,8 @@ export function LoginFormCard() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">发送前校验</p>
-                <p className="mt-2 font-display text-3xl leading-none text-ink sm:text-4xl">{captcha?.prompt ?? "验证码加载中..."}</p>
-                <p className="mt-3 text-xs leading-6 text-muted">输入正确计算结果后才能发送邮箱验证码。</p>
+                <p className="mt-2 font-display text-3xl leading-none text-ink sm:text-4xl">{captcha?.prompt ?? "校验题加载中..."}</p>
+                <p className="mt-3 text-xs leading-6 text-muted">输入正确的计算结果后，才会发送邮箱验证码。</p>
               </div>
               <button
                 className="inline-flex min-h-10 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:w-auto"
@@ -396,18 +405,20 @@ export function LoginFormCard() {
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4 sm:p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">验证码已发送至</p>
             <p className="mt-2 text-base font-semibold text-ink sm:text-lg">{emailForDisplay}</p>
-            <p className="mt-2 text-sm leading-6 text-muted">输入 6 位数字验证码后会自动尝试登录，也支持直接粘贴完整验证码。</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              输入 {EMAIL_OTP_LENGTH} 位数字验证码后会自动尝试登录，也支持直接粘贴完整验证码。
+            </p>
           </div>
 
           <div className="space-y-2">
             <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">邮箱验证码</label>
             <button
-              className="grid w-full grid-cols-6 gap-2 rounded-3xl border border-black/10 bg-white/80 p-3 text-left sm:gap-3 sm:p-4"
+              className="grid w-full grid-cols-4 gap-2 rounded-3xl border border-black/10 bg-white/80 p-3 text-left sm:grid-cols-8 sm:gap-3 sm:p-4"
               onClick={() => otpInputRef.current?.focus()}
               type="button"
             >
               {otpDigits.map((digit, index) => {
-                const active = index === otpCode.length && otpCode.length < 6;
+                const active = index === otpCode.length && otpCode.length < EMAIL_OTP_LENGTH;
                 const filled = Boolean(digit);
 
                 return (
@@ -428,15 +439,15 @@ export function LoginFormCard() {
               autoComplete="one-time-code"
               className="sr-only"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={EMAIL_OTP_LENGTH}
               onBlur={() => setOtpTouched(true)}
               onChange={(event) => handleOtpChange(event.target.value)}
               onPaste={handleOtpPaste}
-              placeholder="输入 6 位验证码"
+              placeholder={`输入 ${EMAIL_OTP_LENGTH} 位验证码`}
               ref={otpInputRef}
               value={otpCode}
             />
-            {otpInvalid ? <p className="text-xs leading-6 text-red-600">验证码需为 6 位数字。</p> : null}
+            {otpInvalid ? <p className="text-xs leading-6 text-red-600">验证码需要为 {EMAIL_OTP_LENGTH} 位数字。</p> : null}
           </div>
 
           {cooldownSeconds > 0 ? (
@@ -445,7 +456,7 @@ export function LoginFormCard() {
             </div>
           ) : (
             <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted">
-              没有收到验证码？你可以返回上一步修改邮箱，或重新发一封新的验证码邮件。
+              没有收到验证码？你可以返回上一步修改邮箱，或重新发送一封新的验证码邮件。
             </div>
           )}
 
@@ -454,7 +465,7 @@ export function LoginFormCard() {
           <div className="grid grid-cols-2 gap-3">
             <button
               className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/50 sm:px-5"
-              disabled={isPending || otpCode.length !== 6}
+              disabled={isPending || otpCode.length !== EMAIL_OTP_LENGTH}
               type="submit"
             >
               {verifyButtonLabel}

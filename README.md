@@ -1,50 +1,53 @@
-# QuoteCraft App Skeleton
+# QuoteCraft
 
-This repository now includes a first-pass Next.js project skeleton for the mobile-first QuoteCraft app.
+这是一个基于 `Next.js App Router + Supabase SSR Auth + React Query + Zustand` 的报价方案系统，当前已经具备 Web 端主链路，并预留了 Capacitor 移动端壳接入结构。
 
-## Included
+## 当前技术栈
 
-- Next.js App Router setup
-- Tailwind configuration
-- Login / workspace / project editor / share page routes
-- Mock API route placeholders
-- Zustand-based editor state scaffold
-- React Query provider scaffold
-- Basic server/repository/service placeholders
-- Supabase environment placeholders
-- Supabase SSR auth scaffold with login callback + middleware
+- 前端：Next.js 15、React 19、Tailwind CSS
+- 状态管理：Zustand、TanStack Query
+- 鉴权与数据：Supabase SSR Auth、Supabase Database
+- AI：OpenAI Responses API
+- 移动端壳：Capacitor 7
 
-## Not yet wired
+## 当前已具备的能力
 
-- Dependency installation
-- Real database reads/writes
-- PDF export implementation
+- 邮箱 OTP 登录
+- 工作台项目列表
+- 新建 / 编辑 / 保存项目
+- 分享页与打印页
+- AI 生成项目简介与服务范围
+- Supabase 真是数据读写链路
+- Capacitor 远程站点壳基础配置
 
-## Server-side data notes
+## 本地开发
 
-- `workspace` / `project detail` / `share page` now go through `projectService`
-- If Supabase environment variables are present, repository code will try database reads first
-- If env vars are missing or the query returns no data yet, code falls back to local mock data
-- For server-side database reads, `SUPABASE_SERVICE_ROLE_KEY` is recommended during this scaffold stage
+先补齐环境变量，再启动开发服务：
 
-## AI notes
+```bash
+cmd /c npm run dev
+```
 
-- `AI 生成项目简介 / 服务范围` buttons are connected
-- If `OPENAI_API_KEY` is present, routes use the OpenAI Responses API scaffold
-- If `OPENAI_API_KEY` is missing or the request fails, routes fall back to local business-copy generation
-- AI calls can be logged into `ai_logs` when Supabase is configured
+详细说明见 [LOCAL_SETUP.md](/g:/QuoteCraft/LOCAL_SETUP.md)。
 
-## Suggested next steps
+## Capacitor 接入说明
 
-1. Install dependencies with `npm install`
-2. Create a Supabase project
-3. Run `supabase-schema-and-rls.sql`
-4. Fill `.env.local` with Supabase URL and keys
-5. Configure Supabase Auth redirect URL to `/auth/callback`
-6. Add `OPENAI_API_KEY` and optionally `OPENAI_MODEL`
-7. Replace remaining mock data and polish mutations
+当前项目依赖：
 
-## Local debugging
+- `app/api/*` 服务端路由
+- `server/*` 服务端逻辑
+- Supabase SSR Cookie 鉴权
 
-- Runtime health endpoint: `/api/health`
-- Local setup guide: [LOCAL_SETUP.md](/g:/QuoteCraft/LOCAL_SETUP.md)
+因此不适合直接做纯静态导出 App。当前推荐方案是：
+
+1. 先部署 Web 正式站点
+2. 用 Capacitor 将正式站点包成 Android / iOS 外壳
+3. 后续若需要更深原生能力，再逐步接入插件
+
+移动端接入与打包步骤见 [CAPACITOR_SETUP.md](/g:/QuoteCraft/CAPACITOR_SETUP.md)。
+
+Android 打包流程见 [ANDROID_RELEASE.md](/g:/QuoteCraft/ANDROID_RELEASE.md)。
+
+Android 上架前检查见 [ANDROID_PUBLISH_CHECKLIST.md](/g:/QuoteCraft/ANDROID_PUBLISH_CHECKLIST.md)。
+
+Google Play 上架步骤见 [ANDROID_GOOGLE_PLAY_PUBLISH.md](/g:/QuoteCraft/ANDROID_GOOGLE_PLAY_PUBLISH.md)。

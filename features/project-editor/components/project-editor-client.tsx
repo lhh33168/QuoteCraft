@@ -15,9 +15,11 @@ type ProjectEditorClientProps = {
 
 export function ProjectEditorClient({ mode, initialState }: ProjectEditorClientProps) {
   const storeRef = useRef<ReturnType<typeof createProjectEditorStore> | null>(null);
+  const storeProjectIdRef = useRef(initialState.project.id);
 
-  if (!storeRef.current) {
+  if (!storeRef.current || storeProjectIdRef.current !== initialState.project.id) {
     storeRef.current = createProjectEditorStore(initialState);
+    storeProjectIdRef.current = initialState.project.id;
   }
 
   const detailQuery = useQuery({

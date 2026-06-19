@@ -1,18 +1,18 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import type { Route } from "next";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useStore } from "zustand";
-import type { QuoteItem } from "@/shared/types/project";
-import { formatMoney } from "@/shared/lib/format-money";
-import { formatDateTime } from "@/shared/lib/format-datetime";
-import { SaveStatus } from "@/features/project-editor/components/save-status";
 import { AiStatus } from "@/features/project-editor/components/ai-status";
+import { SaveStatus } from "@/features/project-editor/components/save-status";
 import { buildAiPayload } from "@/features/project-editor/lib/build-ai-payload";
 import { buildProjectDetailPayload } from "@/features/project-editor/lib/project-detail-payload";
+import { formatDateTime } from "@/shared/lib/format-datetime";
+import { formatMoney } from "@/shared/lib/format-money";
 import { queryKeys } from "@/shared/lib/query-keys";
+import type { ProjectDetail, QuoteItem } from "@/shared/types/project";
 
 type ProjectEditorScreenProps = {
   mode: "create" | "edit";
@@ -21,9 +21,14 @@ type ProjectEditorScreenProps = {
   >;
 };
 
+type AiTarget = "summary" | "scope";
+type SaveTrigger = "manual" | "auto" | "export";
+
 export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const detail = useStore(store, (state) => state.detail);
   const dirty = useStore(store, (state) => state.dirty);
   const saving = useStore(store, (state) => state.saving);
@@ -50,15 +55,38 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
     kind: "idle",
     message: null
   });
+  const [aiTarget, setAiTarget] = useState<AiTarget | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isAiPending, startAiTransition] = useTransition();
+  const [isExportPending, startExportTransition] = useTransition();
+  const [isCopyPending, startCopyTransition] = useTransition();
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
   const isHydratedRef = useRef(false);
+  const createdNoticeHandledRef = useRef(false);
 
-  async function persistDetail(trigger: "manual" | "auto") {
+  function openPrintPage(projectId: string) {
+    window.open(`/projects/${projectId}/print`, "_blank", "noopener,noreferrer");
+  }
+
+  function applySavedProjectData(data: ProjectDetail) {
+    replaceDetail(data);
+    markSaved(data);
+    queryClient.setQueryData(queryKeys.project(data.project.id), data);
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.projects
+    });
+  }
+
+  async function persistDetail(trigger: SaveTrigger) {
     setSaving(true);
     setSaveState({
       kind: "saving",
-      message: trigger === "manual" ? "正在保存项目..." : "正在自动保存..."
+      message:
+        trigger === "manual"
+          ? "正在保存项目..."
+          : trigger === "export"
+            ? "正在保存并准备导出 PDF..."
+            : "正在自动保存..."
     });
 
     try {
@@ -78,7 +106,7 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
         body: JSON.stringify(payload)
       });
 
-      const data = (await response.json()) as typeof payload;
+      const data = (await response.json()) as ProjectDetail;
 
       if (!response.ok) {
         setSaving(false);
@@ -86,34 +114,92 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
           kind: "error",
           message: "保存失败，请稍后重试。"
         });
-        return;
+        return null;
       }
 
-      markSaved(data);
-      queryClient.setQueryData(queryKeys.project(data.project.id), data);
-      await queryClient.invalidateQueries({
-        queryKey: queryKeys.projects
-      });
+      applySavedProjectData(data);
+
+      if (trigger === "manual") {
+        setSaveState({
+          kind: "success",
+          message: mode === "create" ? "项目已创建，正在返回工作台..." : "项目已保存，正在返回工作台..."
+        });
+        router.replace((mode === "create" ? "/workspace?saved=created" : "/workspace?saved=1") as Route);
+        return data;
+      }
+
+      if (trigger === "export") {
+        setSaveState({
+          kind: "success",
+          message: "项目已保存，正在打开导出页..."
+        });
+        return data;
+      }
+
       setSaveState({
         kind: "success",
-        message: trigger === "manual" ? "项目已保存。" : "草稿已自动保存。"
+        message: "草稿已自动保存。"
       });
 
-      if (mode === "create" && data.project?.id && data.project.id !== detail.project.id) {
-        router.push(`/projects/${data.project.id}`);
-        router.refresh();
-        return;
-      }
-
-      replaceDetail(data);
-      router.refresh();
+      return data;
     } catch {
       setSaving(false);
       setSaveState({
         kind: "error",
         message: "保存请求失败，请检查本地环境。"
       });
+      return null;
     }
+  }
+
+  async function ensureShareUrl(projectId: string) {
+    const response = await fetch(`/api/projects/${projectId}/share`, {
+      method: "POST"
+    });
+    const data = (await response.json()) as {
+      shareToken?: string;
+      shareUrl?: string;
+      error?: string;
+    };
+
+    if (!response.ok || !data.shareToken || !data.shareUrl) {
+      throw new Error(data.error ?? "生成分享链接失败。");
+    }
+
+    replaceDetail({
+      ...detail,
+      project: {
+        ...detail.project,
+        shareToken: data.shareToken,
+        status: "shared"
+      }
+    });
+    void queryClient.invalidateQueries({
+      queryKey: queryKeys.projects
+    });
+
+    return data.shareUrl;
+  }
+
+  async function prepareShareUrl() {
+    let currentProjectId = detail.project.id;
+
+    if (mode === "create" || dirty) {
+      const saved = await persistDetail("export");
+
+      if (!saved?.project.id) {
+        return null;
+      }
+
+      currentProjectId = saved.project.id;
+    }
+
+    setSaveState({
+      kind: "saving",
+      message: "正在生成分享链接..."
+    });
+
+    return ensureShareUrl(currentProjectId);
   }
 
   function handleSave() {
@@ -122,11 +208,92 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
     });
   }
 
-  function handleAiGenerate(target: "summary" | "scope") {
+  function handleExportPdf() {
+    startExportTransition(async () => {
+      if (mode === "create" || dirty) {
+        const saved = await persistDetail("export");
+
+        if (saved?.project.id) {
+          openPrintPage(saved.project.id);
+        }
+
+        return;
+      }
+
+      openPrintPage(detail.project.id);
+    });
+  }
+
+  function handleOpenSharePage() {
+    setShareFeedback("正在打开客户页...");
+
+    if (mode === "create" || dirty) {
+      startCopyTransition(async () => {
+        try {
+          const shareUrl = await prepareShareUrl();
+
+          if (!shareUrl) {
+            return;
+          }
+
+          const absoluteUrl = new URL(shareUrl, window.location.origin).toString();
+          window.open(absoluteUrl, "_blank", "noopener,noreferrer");
+          setSaveState({
+            kind: "success",
+            message: "客户分享页已打开。"
+          });
+          setShareFeedback("客户分享页已打开。");
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "打开分享页失败。";
+          setSaveState({
+            kind: "error",
+            message
+          });
+          setShareFeedback(message);
+        }
+      });
+
+      return;
+    }
+
+    window.open(`/projects/${detail.project.id}/share`, "_blank", "noopener,noreferrer");
+  }
+
+  function handleCopyShareLink() {
+    startCopyTransition(async () => {
+      setShareFeedback(null);
+
+      try {
+        const shareUrl = await prepareShareUrl();
+
+        if (!shareUrl) {
+          return;
+        }
+
+        const absoluteUrl = new URL(shareUrl, window.location.origin).toString();
+        await navigator.clipboard.writeText(absoluteUrl);
+        setSaveState({
+          kind: "success",
+          message: "分享链接已复制。"
+        });
+        setShareFeedback("分享链接已复制到剪贴板。");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "复制分享链接失败。";
+        setSaveState({
+          kind: "error",
+          message
+        });
+        setShareFeedback(message);
+      }
+    });
+  }
+
+  function handleAiGenerate(target: AiTarget) {
     startAiTransition(async () => {
+      setAiTarget(target);
       setAiState({
         kind: "loading",
-        message: target === "summary" ? "正在生成项目简介..." : "正在生成服务范围..."
+        message: target === "summary" ? "AI 正在生成项目简介，请稍候..." : "AI 正在生成服务范围，请稍候..."
       });
 
       try {
@@ -168,9 +335,26 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
           kind: "error",
           message: "AI 请求失败，请检查本地环境。"
         });
+      } finally {
+        setAiTarget(null);
       }
     });
   }
+
+  useEffect(() => {
+    const created = searchParams.get("created");
+
+    if (created !== "1" || createdNoticeHandledRef.current) {
+      return;
+    }
+
+    createdNoticeHandledRef.current = true;
+    setSaveState({
+      kind: "success",
+      message: "项目创建成功，已进入编辑页。"
+    });
+    router.replace(pathname as Route);
+  }, [pathname, router, searchParams]);
 
   useEffect(() => {
     if (!isHydratedRef.current) {
@@ -221,36 +405,36 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
             <Field label="项目名称">
               <input
                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.title}
                 onChange={(event) => setProjectField("title", event.target.value)}
+                value={detail.project.title}
               />
             </Field>
             <Field label="客户名称">
               <input
                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.clientName}
                 onChange={(event) => setProjectField("clientName", event.target.value)}
+                value={detail.project.clientName}
               />
             </Field>
             <Field label="客户公司">
               <input
                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.clientCompany ?? ""}
                 onChange={(event) => setProjectField("clientCompany", event.target.value)}
+                value={detail.project.clientCompany ?? ""}
               />
             </Field>
             <Field label="客户行业">
               <input
                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.industry ?? ""}
                 onChange={(event) => setProjectField("industry", event.target.value)}
+                value={detail.project.industry ?? ""}
               />
             </Field>
-            <Field label="联系方式">
+            <Field label="联系电话">
               <input
                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.contactPhone ?? ""}
                 onChange={(event) => setProjectField("contactPhone", event.target.value)}
+                value={detail.project.contactPhone ?? ""}
               />
             </Field>
           </div>
@@ -262,22 +446,22 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
             <Field label="项目简介">
               <textarea
                 className="min-h-28 w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.summary ?? ""}
                 onChange={(event) => setProjectField("summary", event.target.value)}
+                value={detail.project.summary ?? ""}
               />
             </Field>
             <Field label="服务范围">
               <textarea
                 className="min-h-28 w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.scope ?? ""}
                 onChange={(event) => setProjectField("scope", event.target.value)}
+                value={detail.project.scope ?? ""}
               />
             </Field>
             <Field label="原始需求">
               <textarea
                 className="min-h-28 w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-                value={detail.project.rawRequirement ?? ""}
                 onChange={(event) => setProjectField("rawRequirement", event.target.value)}
+                value={detail.project.rawRequirement ?? ""}
               />
             </Field>
           </div>
@@ -287,10 +471,10 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-display text-3xl text-ink">报价项</h2>
-              <p className="mt-2 text-sm text-muted">先把骨架建起来，后续再接拖拽排序和自动保存。</p>
+              <p className="mt-2 text-sm text-muted">先搭好报价骨架，后面再继续补充说明、排序和细节。</p>
             </div>
             <button
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold text-white"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
               onClick={addQuoteItem}
               type="button"
             >
@@ -325,49 +509,114 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
         </article>
 
         <article className="rounded-[28px] border border-white/80 bg-white/85 p-6">
-          <h2 className="font-display text-3xl text-ink">AI 与输出</h2>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-3xl text-ink">AI 与输出</h2>
+              <p className="mt-2 text-sm leading-7 text-muted">
+                AI 生成时会锁定相关按钮，并在这里实时提示进度，让用户知道内容仍在生成中。
+              </p>
+            </div>
+            {isAiPending ? (
+              <span className="inline-flex items-center gap-2 rounded-full bg-pine/8 px-3 py-2 text-xs font-semibold text-pine">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-pine" />
+                生成中
+              </span>
+            ) : null}
+          </div>
+
           <div className="mt-4">
             <AiStatus kind={aiState.kind} message={aiState.message} />
             {mode === "create" ? (
               <p className="mt-2 text-xs leading-6 text-muted">
-                新建项目建议先补充行业与原始需求，再用 AI 生成文案，最后点击“创建并保存”。
+                新建项目建议先补充行业和原始需求，再用 AI 生成文案，最后点“创建并保存”。
               </p>
             ) : null}
+            {shareFeedback ? <p className="mt-2 text-xs leading-6 text-muted">{shareFeedback}</p> : null}
           </div>
+
+          {isAiPending ? (
+            <div className="mt-4 rounded-[22px] border border-pine/10 bg-pine/5 p-4">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-5 w-5 animate-spin rounded-full border-2 border-pine/30 border-t-pine" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    {aiTarget === "summary" ? "正在生成项目简介" : "正在生成服务范围"}
+                  </p>
+                  <p className="text-xs leading-6 text-muted">通常几秒内完成，生成后会自动回填到表单。</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-5 grid gap-3">
             <button
-              className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-ink"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold whitespace-nowrap text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
               disabled={isAiPending}
               onClick={() => handleAiGenerate("summary")}
               type="button"
             >
-              AI 生成项目简介
+              {isAiPending && aiTarget === "summary" ? (
+                <>
+                  <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-pine/30 border-t-pine" />
+                  正在生成简介...
+                </>
+              ) : (
+                "AI 生成项目简介"
+              )}
             </button>
             <button
-              className="rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-ink"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-black/10 bg-white px-5 py-3 text-sm font-semibold whitespace-nowrap text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
               disabled={isAiPending}
               onClick={() => handleAiGenerate("scope")}
               type="button"
             >
-              AI 生成服务范围
-            </button>
-            <button className="rounded-full bg-pine px-5 py-3 text-sm font-semibold text-white" type="button">
-              导出 PDF
+              {isAiPending && aiTarget === "scope" ? (
+                <>
+                  <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-pine/30 border-t-pine" />
+                  正在生成范围...
+                </>
+              ) : (
+                "AI 生成服务范围"
+              )}
             </button>
             <button
-              className="rounded-full bg-navy px-5 py-3 text-sm font-semibold text-white"
-              disabled={isPending || saving}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-pine px-5 py-3 text-sm font-semibold whitespace-nowrap text-white disabled:cursor-not-allowed disabled:opacity-70"
+              disabled={isPending || saving || isExportPending || isCopyPending}
+              onClick={handleExportPdf}
+              type="button"
+            >
+              {isExportPending ? (
+                <>
+                  <span className="inline-flex h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  正在准备 PDF...
+                </>
+              ) : (
+                "导出 PDF"
+              )}
+            </button>
+            <button
+              className="rounded-full bg-navy px-5 py-3 text-sm font-semibold whitespace-nowrap text-white"
+              disabled={isPending || saving || isExportPending || isCopyPending}
               onClick={handleSave}
               type="button"
             >
               {isPending || saving ? "保存中..." : mode === "create" ? "创建并保存" : "保存修改"}
             </button>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-              href={`/share/${detail.project.shareToken ?? `share-${detail.project.id}`}`}
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink"
+              onClick={handleOpenSharePage}
+              type="button"
             >
-              打开分享页
-            </Link>
+              查看客户页
+            </button>
+            <button
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
+              disabled={isPending || saving || isExportPending || isCopyPending}
+              onClick={handleCopyShareLink}
+              type="button"
+            >
+              {isCopyPending ? "正在复制..." : "复制分享链接"}
+            </button>
           </div>
         </article>
       </aside>
@@ -397,39 +646,39 @@ function QuoteItemCard({ item, onChange, onRemove }: QuoteItemCardProps) {
         <Field label="模块名称">
           <input
             className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-            value={item.name}
             onChange={(event) => onChange({ name: event.target.value })}
+            value={item.name}
           />
         </Field>
         <Field label="模块描述">
           <textarea
             className="min-h-24 w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-            value={item.description ?? ""}
             onChange={(event) => onChange({ description: event.target.value })}
+            value={item.description ?? ""}
           />
         </Field>
         <div className="grid gap-4 md:grid-cols-3">
           <Field label="单价">
             <input
               className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
+              onChange={(event) => onChange({ unitPrice: Number(event.target.value) })}
               type="number"
               value={item.unitPrice}
-              onChange={(event) => onChange({ unitPrice: Number(event.target.value) })}
             />
           </Field>
           <Field label="数量">
             <input
               className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
+              onChange={(event) => onChange({ quantity: Number(event.target.value) })}
               type="number"
               value={item.quantity}
-              onChange={(event) => onChange({ quantity: Number(event.target.value) })}
             />
           </Field>
           <Field label="单位">
             <input
               className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3"
-              value={item.unit ?? ""}
               onChange={(event) => onChange({ unit: event.target.value })}
+              value={item.unit ?? ""}
             />
           </Field>
         </div>
@@ -437,7 +686,7 @@ function QuoteItemCard({ item, onChange, onRemove }: QuoteItemCardProps) {
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <span className="font-display text-2xl text-pine">{formatMoney(item.subtotal)}</span>
         <button
-          className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600"
+          className="rounded-full border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold whitespace-nowrap text-red-600"
           onClick={onRemove}
           type="button"
         >

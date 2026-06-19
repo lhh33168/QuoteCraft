@@ -3,6 +3,7 @@ import { verifyLoginCaptcha } from "@/server/auth/login-captcha";
 import { createSendCooldownToken, verifySendCooldown } from "@/server/auth/login-send-rate-limit";
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
 import { isSupabaseBrowserConfigured } from "@/server/supabase/keys";
+import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
 
 const SEND_COOLDOWN_COOKIE = "quotecraft-login-send-cooldown";
 
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({
-    message: "验证码已发送，请前往邮箱查看 6 位数字验证码。",
+    message: `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码。`,
     retryAfterSeconds: 60
   });
   const supabase = createRouteAuthClient(request, response);

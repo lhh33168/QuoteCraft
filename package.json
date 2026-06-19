@@ -7,9 +7,24 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "cap:doctor": "cap doctor",
+    "cap:copy": "cap copy",
+    "cap:sync": "cap sync",
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "android:assemble:debug": "cd android && gradlew.bat assembleDebug",
+    "android:assemble:release": "cd android && gradlew.bat assembleRelease",
+    "android:bundle:release": "cd android && gradlew.bat bundleRelease",
+    "android:signing:check": "powershell -NoProfile -Command \"if (Test-Path 'android/keystore.properties') { Write-Output 'release-signing-configured' } else { Write-Output 'release-signing-missing' }\"",
+    "android:keystore:create": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android/create-keystore.ps1",
+    "android:keystore:write": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android/write-keystore-properties.ps1",
+    "android:release:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/android/release-preflight.ps1"
   },
   "dependencies": {
+    "@capacitor/core": "^7.4.2",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.0",
     "@tanstack/react-query": "^5.80.7",
@@ -22,6 +37,9 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.4.2",
+    "@capacitor/cli": "^7.4.2",
+    "@capacitor/ios": "^7.4.2",
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",

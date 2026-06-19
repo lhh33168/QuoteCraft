@@ -239,6 +239,34 @@ alter table public.quote_items enable row level security;
 alter table public.share_visits enable row level security;
 alter table public.ai_logs enable row level security;
 
+-- -----------------------------------------------------
+-- grants
+-- -----------------------------------------------------
+
+grant usage on schema public to anon, authenticated, service_role;
+
+grant select, insert, update, delete on table public.user_profiles to authenticated;
+grant select, insert, update, delete on table public.projects to authenticated;
+grant select, insert, update, delete on table public.quote_items to authenticated;
+grant select, insert on table public.ai_logs to authenticated;
+
+grant all privileges on table public.user_profiles to service_role;
+grant all privileges on table public.projects to service_role;
+grant all privileges on table public.quote_items to service_role;
+grant all privileges on table public.share_visits to service_role;
+grant all privileges on table public.ai_logs to service_role;
+
+grant usage, select on all sequences in schema public to authenticated, service_role;
+
+alter default privileges in schema public
+grant select, insert, update, delete on tables to authenticated;
+
+alter default privileges in schema public
+grant all privileges on tables to service_role;
+
+alter default privileges in schema public
+grant usage, select on sequences to authenticated, service_role;
+
 -- user_profiles
 drop policy if exists "user_profiles_select_own" on public.user_profiles;
 create policy "user_profiles_select_own"

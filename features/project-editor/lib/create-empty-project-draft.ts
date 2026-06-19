@@ -30,7 +30,7 @@ export function createEmptyProjectDraft(): ProjectDetail {
       {
         id: "item-1",
         name: "官网策划与信息架构",
-        description: "梳理页面结构与转化路径。",
+        description: "梳理页面结构、内容路径与转化流程。",
         category: "design",
         unitPrice: 6000,
         quantity: 1,

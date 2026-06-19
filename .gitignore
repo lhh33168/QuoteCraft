@@ -6,3 +6,8 @@ node_modules
 .env.production.local
 dist
 coverage
+android
+ios
+android/.gradle
+android/keystore.properties
+android/keystores

@@ -25,5 +25,9 @@ export const projectService = {
   async deleteProject(id: string) {
     const user = await requireUser();
     return projectRepository.remove(id, user.id);
+  },
+  async ensureProjectShareToken(id: string) {
+    const user = await requireUser();
+    return projectRepository.ensureShareToken(id, user.id);
   }
 };
