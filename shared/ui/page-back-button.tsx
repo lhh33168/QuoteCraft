@@ -32,11 +32,11 @@ export function PageBackButton({
   return (
     <button
       aria-label={label}
-      className="group inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-[16px] bg-white px-3 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-[#fbfcfa] hover:text-pine"
+      className="group inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-[18px] border border-[#d9e3dc] bg-white/96 px-3 text-sm font-semibold text-ink shadow-[0_10px_24px_rgba(19,33,29,0.06)] transition duration-200 hover:-translate-y-[1px] hover:border-pine/18 hover:bg-[#fcfdfb] hover:text-pine focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine/14 active:translate-y-0 sm:h-10 sm:min-w-10"
       onClick={handleBack}
       type="button"
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f4f7f1] text-ink transition group-hover:bg-pine/12 group-hover:text-pine">
+      <span className="flex h-5 w-5 items-center justify-center text-ink transition group-hover:text-pine">
         <svg
           aria-hidden="true"
           className="h-4 w-4 shrink-0"
@@ -53,7 +53,7 @@ export function PageBackButton({
           />
         </svg>
       </span>
-      <span className="hidden sm:inline">{label}</span>
+      <span className="hidden text-[13px] sm:inline">{label}</span>
     </button>
   );
 }
