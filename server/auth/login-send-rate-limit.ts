@@ -13,7 +13,7 @@ export type SendCooldownState = {
 const SEND_COOLDOWN_SECONDS = 60;
 
 function getCooldownSecret() {
-  return process.env.AUTH_SEND_COOLDOWN_SECRET ?? process.env.AUTH_CAPTCHA_SECRET ?? process.env.SUPABASE_SECRET_KEY ?? "quotecraft-dev-send-cooldown-secret";
+  return process.env.AUTH_SEND_COOLDOWN_SECRET ?? process.env.SUPABASE_SECRET_KEY ?? "quotecraft-dev-send-cooldown-secret";
 }
 
 function normalizeEmail(email: string) {

@@ -9,12 +9,6 @@ import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
 
 type LoginStep = "request-code" | "verify-code";
 
-type CaptchaChallenge = {
-  prompt: string;
-  token: string;
-  expiresInSeconds: number;
-};
-
 type LoginApiPayload = {
   error?: string;
   message?: string;
@@ -35,8 +29,6 @@ export function LoginFormCard() {
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const [email, setEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [captchaAnswer, setCaptchaAnswer] = useState("");
-  const [captcha, setCaptcha] = useState<CaptchaChallenge | null>(null);
   const [step, setStep] = useState<LoginStep>("request-code");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
   const [lastSentEmail, setLastSentEmail] = useState("");
@@ -50,7 +42,6 @@ export function LoginFormCard() {
     message: callbackError
   });
   const [isPending, startTransition] = useTransition();
-  const [isRefreshingCaptcha, startCaptchaTransition] = useTransition();
 
   const trimmedEmail = email.trim();
   const emailValid = isValidEmail(trimmedEmail);
@@ -90,34 +81,6 @@ export function LoginFormCard() {
     return () => window.clearInterval(timer);
   }, [cooldownSeconds]);
 
-  function loadCaptcha() {
-    startCaptchaTransition(async () => {
-      try {
-        const response = await fetch("/api/auth/captcha", {
-          method: "GET",
-          cache: "no-store"
-        });
-
-        if (!response.ok) {
-          setCaptcha(null);
-          setError("登录校验题加载失败，请刷新页面后重试。");
-          return;
-        }
-
-        const data = (await response.json()) as CaptchaChallenge;
-        setCaptcha(data);
-        setCaptchaAnswer("");
-      } catch {
-        setCaptcha(null);
-        setError("登录校验题加载失败，请检查网络后重试。");
-      }
-    });
-  }
-
-  useEffect(() => {
-    loadCaptcha();
-  }, []);
-
   useEffect(() => {
     if (step !== "verify-code") {
       return;
@@ -131,12 +94,7 @@ export function LoginFormCard() {
     setEmailTouched(true);
 
     if (!emailValid) {
-      setError("请输入正确的工作邮箱。");
-      return;
-    }
-
-    if (!captcha) {
-      setError("登录校验题还没有准备好，请稍后再试。");
+      setError("请输入正确的邮箱地址。");
       return;
     }
 
@@ -159,8 +117,6 @@ export function LoginFormCard() {
           },
           body: JSON.stringify({
             email: trimmedEmail,
-            captchaToken: captcha.token,
-            captchaAnswer,
             next
           })
         });
@@ -176,7 +132,6 @@ export function LoginFormCard() {
             kind: "error",
             message: data.error ?? "验证码发送失败，请稍后重试。"
           });
-          loadCaptcha();
           return;
         }
 
@@ -298,23 +253,13 @@ export function LoginFormCard() {
 
   const sendButtonLabel = isPending ? "发送中..." : cooldownSeconds > 0 ? `${cooldownSeconds}s 后可重发` : "发送验证码";
   const verifyButtonLabel = isPending ? "验证中..." : "验证并登录";
-  const sendDisabled =
-    isPending ||
-    isRefreshingCaptcha ||
-    !captcha ||
-    captchaAnswer.trim().length === 0 ||
-    cooldownSeconds > 0 ||
-    trimmedEmail.length === 0 ||
-    !emailValid;
+  const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
 
   return (
     <section className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-soft backdrop-blur sm:p-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-3xl text-ink">邮箱验证码登录</h2>
-          <p className="mt-3 max-w-md text-sm leading-7 text-muted">
-            输入工作邮箱并完成基础校验后获取验证码。首次登录也会直接收到验证码，不依赖邮箱里的跳转链接。
-          </p>
         </div>
         <div className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted sm:px-4">
           <span>步骤</span>
@@ -337,47 +282,24 @@ export function LoginFormCard() {
 
       {step === "request-code" ? (
         <form className="mt-7 space-y-5" onSubmit={handleSendCode}>
-          <div className="space-y-2">
-            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">工作邮箱</label>
-            <input
-              autoComplete="email"
-              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-4 outline-none placeholder:text-muted/70"
-              onBlur={() => setEmailTouched(true)}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="请输入常用工作邮箱"
-              type="email"
-              value={email}
-            />
+          <div className="space-y-3">
+            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">邮箱地址</label>
+            <div className="rounded-2xl bg-[#f5f7f4] ring-1 ring-black/6 transition duration-200 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-pine/12">
+              <input
+                autoComplete="email"
+                className="w-full bg-transparent px-4 py-3 text-[15px] text-ink outline-none placeholder:text-muted/45"
+                onBlur={() => setEmailTouched(true)}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="name@company.com"
+                type="email"
+                value={email}
+              />
+            </div>
             {emailInvalid ? <p className="text-xs leading-6 text-red-600">请输入正确的邮箱格式，例如 `name@company.com`。</p> : null}
           </div>
 
-          <div className="rounded-3xl border border-black/10 bg-white/70 p-4 sm:p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">发送前校验</p>
-                <p className="mt-2 font-display text-3xl leading-none text-ink sm:text-4xl">{captcha?.prompt ?? "校验题加载中..."}</p>
-                <p className="mt-3 text-xs leading-6 text-muted">输入正确的计算结果后，系统才会发送验证码。</p>
-              </div>
-              <button
-                className="inline-flex min-h-10 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:w-auto"
-                disabled={isRefreshingCaptcha || isPending}
-                onClick={loadCaptcha}
-                type="button"
-              >
-                {isRefreshingCaptcha ? "刷新中..." : "换一题"}
-              </button>
-            </div>
-            <input
-              className="mt-4 w-full rounded-2xl border border-black/10 bg-white px-4 py-4 outline-none placeholder:text-muted/70"
-              inputMode="numeric"
-              onChange={(event) => setCaptchaAnswer(event.target.value.replace(/\D/g, "").slice(0, 2))}
-              placeholder="请输入计算结果"
-              value={captchaAnswer}
-            />
-          </div>
-
-          <div className="rounded-3xl border border-sky-100 bg-sky-50/90 p-4 text-sm leading-7 text-sky-900">
-            登录说明：验证码会直接发送到邮箱中，你只需要回到当前页面输入验证码即可，不需要依赖邮箱 App 跳回产品。
+          <div className="rounded-2xl bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-900 ring-1 ring-sky-100">
+            发送后请前往邮箱查看验证码，再回到当前页面完成登录。
           </div>
 
           {cooldownSeconds > 0 ? (
@@ -406,7 +328,7 @@ export function LoginFormCard() {
         </form>
       ) : (
         <form className="mt-7 space-y-5" onSubmit={handleVerifyCode} ref={verifyFormRef}>
-          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4 sm:p-5">
+          <div className="rounded-2xl bg-[#f6faf7] px-4 py-4 ring-1 ring-emerald-100 sm:px-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">验证码已发送至</p>
             <p className="mt-2 text-base font-semibold text-ink sm:text-lg">{emailForDisplay}</p>
             <p className="mt-2 text-sm leading-6 text-muted">
@@ -414,10 +336,10 @@ export function LoginFormCard() {
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">邮箱验证码</label>
             <button
-              className="grid w-full grid-cols-4 gap-2 rounded-3xl border border-black/10 bg-white/80 p-3 text-left sm:grid-cols-8 sm:gap-3 sm:p-4"
+              className="grid w-full grid-cols-4 gap-2 rounded-2xl bg-[#f5f7f4] p-2 ring-1 ring-black/6 sm:grid-cols-8 sm:gap-2.5 sm:p-2.5"
               onClick={() => otpInputRef.current?.focus()}
               type="button"
             >
@@ -428,9 +350,9 @@ export function LoginFormCard() {
                 return (
                   <span
                     className={[
-                      "flex h-12 items-center justify-center rounded-2xl border text-base font-semibold transition sm:h-14 sm:text-lg",
-                      filled ? "border-pine bg-pine/10 text-ink" : "border-black/10 bg-white text-muted",
-                      active ? "border-pine shadow-[0_0_0_3px_rgba(34,104,90,0.12)]" : ""
+                      "flex h-11 items-center justify-center rounded-xl bg-white text-base font-semibold text-ink transition ring-1 sm:h-12",
+                      filled ? "bg-emerald-50 ring-pine/18" : "ring-black/6",
+                      active ? "ring-[3px] ring-pine/14" : ""
                     ].join(" ")}
                     key={index}
                   >
@@ -455,11 +377,11 @@ export function LoginFormCard() {
           </div>
 
           {cooldownSeconds > 0 ? (
-            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted">
+            <div className="rounded-2xl bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted ring-1 ring-black/6">
               还没收到验证码？请等待 {cooldownSeconds} 秒后再重新发送。
             </div>
           ) : (
-            <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted">
+            <div className="rounded-2xl bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted ring-1 ring-black/6">
               还没收到验证码？你可以返回上一步修改邮箱，或重新发送一封新的验证码邮件。
             </div>
           )}

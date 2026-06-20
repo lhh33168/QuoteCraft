@@ -109,7 +109,7 @@ NEXT_PUBLIC_CAPACITOR_SERVER_URL=
 
 当前后端实现是：
 
-1. 用户输入邮箱并完成发码前校验
+1. 用户输入邮箱
 2. 服务端检查 Supabase 中是否已有该邮箱用户
 3. 如果没有，服务端先补建 auth 用户
 4. 再统一调用 `signInWithOtp({ shouldCreateUser: false })`
@@ -121,9 +121,8 @@ NEXT_PUBLIC_CAPACITOR_SERVER_URL=
 流程为：
 
 1. 输入邮箱
-2. 完成校验
-3. 发送验证码
-4. 输入验证码登录
+2. 发送验证码
+3. 输入验证码登录
 
 ### 4.3 为什么不再依赖邮件回跳
 
@@ -230,7 +229,7 @@ http://localhost:3000/api/auth/session
 1. 打开 `/api/health`
 2. 确认 Supabase 浏览器端和服务端都配置正确
 3. 打开 `/login`
-4. 输入邮箱并完成算术校验
+4. 输入邮箱
 5. 查收 8 位数字验证码
 6. 在当前页面输入验证码登录
 7. 打开 `/api/auth/session` 确认登录态

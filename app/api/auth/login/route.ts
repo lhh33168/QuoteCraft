@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureAuthUser } from "@/server/auth/ensure-auth-user";
-import { verifyLoginCaptcha } from "@/server/auth/login-captcha";
 import { createSendCooldownToken, verifySendCooldown } from "@/server/auth/login-send-rate-limit";
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
 import { isSupabaseBrowserConfigured } from "@/server/supabase/keys";
@@ -34,8 +33,6 @@ function mapAuthError(errorMessage: string) {
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
-    captchaToken?: string;
-    captchaAnswer?: string;
     next?: string;
   };
 
@@ -43,17 +40,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error: "邮箱不能为空。"
-      },
-      { status: 400 }
-    );
-  }
-
-  const captchaCheck = verifyLoginCaptcha(body.captchaToken ?? "", body.captchaAnswer ?? "");
-
-  if (!captchaCheck.ok) {
-    return NextResponse.json(
-      {
-        error: captchaCheck.message
       },
       { status: 400 }
     );
@@ -73,7 +59,7 @@ export async function POST(request: NextRequest) {
 
   if (!isSupabaseBrowserConfigured()) {
     return NextResponse.json({
-      message: "当前尚未配置 Supabase，系统仍处于本地演示模式。补齐环境变量后即可发送真实登录邮件。"
+      message: "当前尚未配置 Supabase，系统仍处于本地演示模式。补齐环境变量后即可发送真实验证码邮件。"
     });
   }
 
