@@ -15,12 +15,13 @@ type SharePageProps = {
 export default async function SharePage({ params, searchParams }: SharePageProps) {
   const { token } = await params;
   const { print, autoprint } = await searchParams;
-  const [document, user] = await Promise.all([projectService.getSharedProject(token), getOptionalUser()]);
+  const [{ detail, billingAccess }, user] = await Promise.all([projectService.getSharedProjectWithAccess(token), getOptionalUser()]);
 
   return (
     <ShareDocumentPage
       autoPrint={autoprint === "1"}
-      document={{ ...document, token }}
+      document={{ ...detail, token }}
+      exportPdfEnabled={billingAccess.entitlements.exportPdfEnabled}
       isLoggedIn={Boolean(user)}
       isPrintMode={print === "1"}
     />

@@ -275,7 +275,7 @@ export function LoginFormCard() {
     }
 
     verifyFormRef.current?.requestSubmit();
-  }, [otpCode, step, isPending]);
+  }, [otpCode, step]);
 
   const sendButtonLabel =
     cooldownSeconds > 0

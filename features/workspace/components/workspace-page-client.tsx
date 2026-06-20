@@ -4,17 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import type { Route } from "next";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useEffect, useState } from "react";
+import { fetchBillingSnapshot } from "@/features/billing/lib/fetch-billing-snapshot";
 import { WorkspacePage } from "@/features/workspace/components/workspace-page";
 import { fetchProjects } from "@/features/workspace/lib/fetch-projects";
 import { useI18n } from "@/shared/i18n/i18n-provider";
 import { queryKeys } from "@/shared/lib/query-keys";
+import type { BillingSnapshot } from "@/shared/types/billing";
 import type { Project } from "@/shared/types/project";
 
 type WorkspacePageClientProps = {
   initialProjects: Project[];
+  initialBillingSnapshot?: BillingSnapshot | null;
 };
 
-export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProps) {
+export function WorkspacePageClient({ initialProjects, initialBillingSnapshot }: WorkspacePageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -26,6 +29,12 @@ export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProp
     queryKey: queryKeys.projects,
     queryFn: fetchProjects,
     initialData: initialProjects
+  });
+  const { data: billingSnapshot } = useQuery({
+    queryKey: queryKeys.billing,
+    queryFn: fetchBillingSnapshot,
+    initialData: initialBillingSnapshot ?? undefined,
+    staleTime: 30_000
   });
 
   useEffect(() => {
@@ -60,6 +69,7 @@ export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProp
 
   return (
     <WorkspacePage
+      billingSnapshot={billingSnapshot ?? null}
       notice={notice}
       onSearchChange={setSearchValue}
       projects={projects}

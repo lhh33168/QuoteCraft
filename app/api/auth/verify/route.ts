@@ -6,6 +6,13 @@ import { createRequestTranslator } from "@/shared/i18n/server";
 function mapVerifyError(errorMessage: string, t: (path: string, values?: Record<string, string | number>) => string) {
   const normalized = errorMessage.toLowerCase();
 
+  if (normalized.includes("rate limit")) {
+    return {
+      status: 429,
+      message: t("api.auth.rateLimitExceeded")
+    };
+  }
+
   if (normalized.includes("expired")) {
     return {
       status: 400,

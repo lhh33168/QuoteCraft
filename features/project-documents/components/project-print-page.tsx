@@ -9,15 +9,53 @@ import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { PageBackButton } from "@/shared/ui/page-back-button";
 
 type ProjectPrintPageProps = {
-  detail: ProjectDetail;
+  detail: ProjectDetail | null;
+  errorMessage?: string | null;
 };
 
 function renderParagraph(value: string | null | undefined, fallback: string) {
   return value?.trim() ? value : fallback;
 }
 
-export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
+export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPageProps) {
   const { t } = useI18n();
+
+  if (!detail) {
+    return (
+      <main className="app-safe-bottom min-h-screen bg-[#f5f1e8] print:bg-white">
+        <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-30 print:hidden">
+          <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 py-3 sm:grid-cols-[48px_minmax(0,1fr)_48px]">
+              <div className="shrink-0">
+                <PageBackButton fallbackHref={"/workspace" as Route} label={t("print.backToEditor")} />
+              </div>
+              <div className="min-w-0 text-center">
+                <p className="truncate text-[16px] font-semibold text-ink sm:text-[18px]">{t("print.title")}</p>
+                <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">{t("print.eyebrow")}</p>
+              </div>
+              <div aria-hidden="true" className="h-11 w-11 sm:h-12 sm:w-12" />
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-3xl px-3 pb-8 pt-5 sm:px-6">
+          <section className="rounded-[28px] border border-amber-200 bg-amber-50/92 p-6 text-sm leading-7 text-amber-900 shadow-soft">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">{t("print.exportDisabledTitle")}</p>
+            <p className="mt-3 font-semibold text-ink">{errorMessage ?? t("print.exportDisabledDescription")}</p>
+            <div className="mt-5">
+              <Link
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-amber-700"
+                href="/settings/billing"
+              >
+                {t("editorScreen.limitUpgradeAction")}
+              </Link>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   const { project, quoteItems } = detail;
 
   const projectTypeLabelMap: Record<ProjectType, string> = {

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -16,11 +17,15 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
   const router = useRouter();
   const { t } = useI18n();
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<"default" | "error" | "success">("default");
+  const [showUpgradeLink, setShowUpgradeLink] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleDuplicate() {
     startTransition(async () => {
+      setMessageTone("default");
+      setShowUpgradeLink(false);
       setMessage(t("projectActions.duplicating"));
 
       try {
@@ -31,19 +36,29 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
           project?: {
             id: string;
           };
+          error?: string;
+          code?: string;
         };
 
         if (!response.ok || !data.project?.id) {
-          setMessage(t("projectActions.duplicateFailed"));
+          setMessageTone("error");
+          setShowUpgradeLink(data.code === "PROJECT_LIMIT_REACHED");
+          setMessage(
+            data.code === "PROJECT_LIMIT_REACHED"
+              ? t("projectActions.duplicateLimitReached")
+              : (data.error ?? t("projectActions.duplicateFailed"))
+          );
           return;
         }
 
+        setMessageTone("success");
         setMessage(t("projectActions.duplicateSuccess"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"]
         });
         router.push(`/projects/${data.project.id}`);
       } catch {
+        setMessageTone("error");
         setMessage(t("projectActions.duplicateRequestFailed"));
       }
     });
@@ -55,6 +70,8 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
 
   function confirmDelete() {
     startTransition(async () => {
+      setMessageTone("default");
+      setShowUpgradeLink(false);
       setMessage(t("projectActions.deleting"));
 
       try {
@@ -63,16 +80,19 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
         });
 
         if (!response.ok) {
+          setMessageTone("error");
           setMessage(t("projectActions.deleteFailed"));
           return;
         }
 
         setDeleteOpen(false);
+        setMessageTone("success");
         setMessage(t("projectActions.deleteSuccess"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"]
         });
       } catch {
+        setMessageTone("error");
         setMessage(t("projectActions.deleteRequestFailed"));
       }
     });
@@ -113,7 +133,25 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
             </span>
           </button>
         </div>
-        {message ? <p className="text-xs leading-6 text-muted">{message}</p> : null}
+        {message ? (
+          <div
+            className={[
+              "rounded-2xl px-3 py-2 text-xs leading-6",
+              messageTone === "success"
+                ? "bg-emerald-50 text-emerald-700"
+                : messageTone === "error"
+                  ? "bg-red-50 text-red-700"
+                  : "bg-black/[0.03] text-muted"
+            ].join(" ")}
+          >
+            <p>{message}</p>
+            {showUpgradeLink ? (
+              <Link className="mt-1 inline-flex font-semibold text-pine underline-offset-2 hover:underline" href="/settings/billing">
+                {t("workspace.goToSubscription")}
+              </Link>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <ConfirmDialog

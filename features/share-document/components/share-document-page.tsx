@@ -15,6 +15,7 @@ type ShareDocumentPageProps = {
   document: ProjectDetail & {
     token: string;
   };
+  exportPdfEnabled: boolean;
   isLoggedIn: boolean;
   isPrintMode?: boolean;
   autoPrint?: boolean;
@@ -29,6 +30,7 @@ function renderParagraph(value: string | null | undefined, fallback: string) {
 
 export function ShareDocumentPage({
   document: shareDocument,
+  exportPdfEnabled,
   isLoggedIn,
   isPrintMode = false,
   autoPrint = false
@@ -76,6 +78,10 @@ export function ShareDocumentPage({
   }
 
   function handleNavigate(target: NavigationState, href: Route) {
+    if (target === "print" && !exportPdfEnabled) {
+      return;
+    }
+
     setNavigationState(target);
     router.push(href);
   }
@@ -312,7 +318,8 @@ export function ShareDocumentPage({
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-pine">{t("share.recommendedTag")}</span>
                   </div>
                   <button
-                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
+                    className="mt-3 inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/55"
+                    disabled={!exportPdfEnabled}
                     onClick={() => handleNavigate("print", autoPrintHref)}
                     onFocus={prefetchTargets}
                     onMouseEnter={prefetchTargets}
@@ -334,11 +341,17 @@ export function ShareDocumentPage({
                       </p>
                     ))}
                   </div>
+                  {!exportPdfEnabled ? (
+                    <p className="mt-3 rounded-[18px] border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-6 text-amber-800">
+                      {t("share.exportDisabledDescription")}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="mt-5 space-y-3">
                   <button
-                    className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
+                    className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
+                    disabled={!exportPdfEnabled}
                     onClick={() => handleNavigate("print", printPageHref)}
                     onFocus={prefetchTargets}
                     onMouseEnter={prefetchTargets}
@@ -441,7 +454,8 @@ export function ShareDocumentPage({
               note={t("share.printNote")}
               primaryAction={
                 <button
-                  className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)]"
+                  className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)] disabled:cursor-not-allowed disabled:bg-pine/55"
+                  disabled={!exportPdfEnabled}
                   onClick={() => handleNavigate("print", autoPrintHref)}
                   onFocus={prefetchTargets}
                   onMouseEnter={prefetchTargets}
@@ -459,7 +473,8 @@ export function ShareDocumentPage({
               }
               secondaryAction={
                 <button
-                  className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)]"
+                  className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)] disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
+                  disabled={!exportPdfEnabled}
                   onClick={() => handleNavigate("print", printPageHref)}
                   onFocus={prefetchTargets}
                   onMouseEnter={prefetchTargets}

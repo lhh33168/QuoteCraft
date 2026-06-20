@@ -366,5 +366,35 @@ export const projectRepository = {
       shareToken: updatedProject.share_token,
       shareUrl: `/share/${updatedProject.share_token}`
     };
+  },
+  async getOwnerIdByProjectId(id: string) {
+    const supabase = requireSupabaseDataClient();
+
+    if (!supabase) {
+      return "mock-user-id";
+    }
+
+    const { data, error } = await supabase.from("projects").select("user_id").eq("id", id).single();
+
+    if (error || !data?.user_id) {
+      throw new Error(explainRepositoryError("读取项目归属用户", error?.message ?? "项目不存在或无权访问。"));
+    }
+
+    return data.user_id as string;
+  },
+  async getOwnerIdByShareToken(token: string) {
+    const supabase = requireSupabaseDataClient();
+
+    if (!supabase) {
+      return "mock-user-id";
+    }
+
+    const { data, error } = await supabase.from("projects").select("user_id").eq("share_token", token).single();
+
+    if (error || !data?.user_id) {
+      throw new Error(explainRepositoryError("读取分享项目归属用户", error?.message ?? "分享项目不存在。"));
+    }
+
+    return data.user_id as string;
   }
 };

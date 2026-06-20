@@ -2,12 +2,13 @@
 
 import { createContext, useContext, useMemo, useTransition } from "react";
 import { LOCALE_COOKIE_NAME, type Locale } from "@/shared/i18n/config";
+import { formatMessage } from "@/shared/i18n/format-message";
 import { getMessage } from "@/shared/i18n/get-message";
 import type { Messages } from "@/shared/i18n/messages";
 
 type I18nContextValue = {
   locale: Locale;
-  t: (path: string) => string;
+  t: (path: string, values?: Record<string, string | number>) => string;
   setLocale: (locale: Locale) => void;
   isSwitching: boolean;
 };
@@ -26,7 +27,7 @@ export function I18nProvider({ children, locale, messages }: I18nProviderProps) 
   const value = useMemo<I18nContextValue>(
     () => ({
       locale,
-      t: (path) => getMessage(messages, path),
+      t: (path, values) => formatMessage(getMessage(messages, path), values),
       setLocale: (nextLocale) => {
         startTransition(() => {
           document.cookie = `${LOCALE_COOKIE_NAME}=${nextLocale}; path=/; max-age=31536000; samesite=lax`;

@@ -17,6 +17,7 @@ import { queryKeys } from "@/shared/lib/query-keys";
 import type { ProjectDetail, QuoteItem } from "@/shared/types/project";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
+import { BillingLimitBanner } from "@/shared/ui/billing-limit-banner";
 import { MobileActionBar } from "@/shared/ui/mobile-action-bar";
 
 type ProjectEditorScreenProps = {
@@ -128,13 +129,17 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
 
       const data = (await response.json()) as ProjectDetail & {
         error?: string;
+        code?: string;
       };
 
       if (!response.ok) {
         setSaving(false);
         setSaveState({
           kind: "error",
-          message: data.error ?? t("editorScreen.saveFailed")
+          message:
+            data.code === "PROJECT_LIMIT_REACHED"
+              ? t("editorScreen.projectLimitInline")
+              : (data.error ?? t("editorScreen.saveFailed"))
         });
         return null;
       }
@@ -183,10 +188,11 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
       shareToken?: string;
       shareUrl?: string;
       error?: string;
+      code?: string;
     };
 
     if (!response.ok || !data.shareToken || !data.shareUrl) {
-      throw new Error(data.error ?? t("editorScreen.shareLinkGenerateFailed"));
+      throw new Error(data.code === "SHARE_DISABLED" ? t("editorScreen.shareDisabledInline") : (data.error ?? t("editorScreen.shareLinkGenerateFailed")));
     }
 
     replaceDetail({
@@ -340,12 +346,13 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
         const data = (await response.json()) as {
           text?: string;
           error?: string;
+          code?: string;
         };
 
         if (!response.ok || !data.text) {
           setAiState({
             kind: "error",
-            message: data.error ?? t("editorScreen.aiFailed")
+            message: data.code === "AI_LIMIT_REACHED" ? t("editorScreen.aiLimitInline") : (data.error ?? t("editorScreen.aiFailed"))
           });
           return;
         }
@@ -449,6 +456,16 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
             </h2>
             <div className="mt-4">
               <SaveStatus kind={saveState.kind} message={saveState.message} />
+              {saveState.kind === "error" && saveState.message === t("editorScreen.projectLimitInline") ? (
+                <div className="mt-3">
+                  <BillingLimitBanner
+                    actionLabel={t("editorScreen.limitUpgradeAction")}
+                    description={t("editorScreen.projectLimitInline")}
+                    href="/settings/billing"
+                    title={t("workspace.projectLimitTitle")}
+                  />
+                </div>
+              ) : null}
               {lastSavedText ? <p className="mt-2 text-xs leading-6 text-muted">{lastSavedText}</p> : null}
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -583,10 +600,30 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
 
             <div className="mt-4">
               <AiStatus kind={aiState.kind} message={aiState.message} />
+              {aiState.kind === "error" && aiState.message === t("editorScreen.aiLimitInline") ? (
+                <div className="mt-3">
+                  <BillingLimitBanner
+                    actionLabel={t("editorScreen.limitUpgradeAction")}
+                    description={t("editorScreen.aiLimitInline")}
+                    href="/settings/billing"
+                    title={t("billing.title")}
+                  />
+                </div>
+              ) : null}
               {mode === "create" ? (
                 <p className="mt-2 text-xs leading-6 text-muted">{t("editorScreen.createAiHint")}</p>
               ) : null}
               {shareFeedback ? <p className="mt-2 text-xs leading-6 text-muted">{shareFeedback}</p> : null}
+              {shareFeedback === t("editorScreen.shareDisabledInline") ? (
+                <div className="mt-3">
+                  <BillingLimitBanner
+                    actionLabel={t("editorScreen.limitUpgradeAction")}
+                    description={t("editorScreen.shareDisabledInline")}
+                    href="/settings/billing"
+                    title={t("billing.title")}
+                  />
+                </div>
+              ) : null}
             </div>
 
             {isAiPending ? (

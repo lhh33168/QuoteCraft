@@ -7,14 +7,17 @@ import { useEffect, useState, useTransition } from "react";
 import { ProjectListActions } from "@/features/workspace/components/project-list-actions";
 import { useI18n } from "@/shared/i18n/i18n-provider";
 import { formatMoney } from "@/shared/lib/format-money";
+import type { BillingSnapshot } from "@/shared/types/billing";
 import type { Project } from "@/shared/types/project";
 import { AppShell } from "@/shared/ui/app-shell";
+import { BillingLimitBanner } from "@/shared/ui/billing-limit-banner";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
 import { LanguageSwitcher } from "@/shared/ui/language-switcher";
 import { MobileActionBar } from "@/shared/ui/mobile-action-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type WorkspacePageProps = {
+  billingSnapshot?: BillingSnapshot | null;
   projects: Project[];
   notice?: string | null;
   searchValue: string;
@@ -23,7 +26,7 @@ type WorkspacePageProps = {
 
 type WorkspaceActionState = "idle" | "create" | "template";
 
-export function WorkspacePage({ projects, notice, searchValue, onSearchChange }: WorkspacePageProps) {
+export function WorkspacePage({ billingSnapshot, projects, notice, searchValue, onSearchChange }: WorkspacePageProps) {
   const router = useRouter();
   const { t } = useI18n();
   const hasProjects = projects.length > 0;
@@ -31,6 +34,10 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
   const [actionState, setActionState] = useState<WorkspaceActionState>("idle");
   const createHref = "/projects/new" as Route;
   const templateHref = "/projects/new?template=education-site" as Route;
+  const projectLimitReached =
+    billingSnapshot?.usage.projectLimit !== null &&
+    billingSnapshot &&
+    billingSnapshot.usage.projectCount >= billingSnapshot.usage.projectLimit;
 
   useEffect(() => {
     router.prefetch(createHref);
@@ -38,11 +45,21 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
   }, [createHref, router, templateHref]);
 
   function handleOpenCreate() {
+    if (projectLimitReached) {
+      router.push("/settings/billing");
+      return;
+    }
+
     setActionState("create");
     router.push(createHref);
   }
 
   function handleOpenTemplate() {
+    if (projectLimitReached) {
+      router.push("/settings/billing");
+      return;
+    }
+
     setActionState("template");
     router.push(templateHref);
   }
@@ -87,6 +104,37 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           {notice ? (
             <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">
               {notice}
+            </div>
+          ) : null}
+
+          {billingSnapshot ? <WorkspaceBillingStatusCard billingSnapshot={billingSnapshot} /> : null}
+          {projectLimitReached ? (
+            <div className="mt-4">
+              <BillingLimitBanner
+                actionLabel={t("workspace.goToSubscription")}
+                description={t("workspace.projectLimitDescription")}
+                href="/settings/billing"
+                title={t("workspace.projectLimitTitle")}
+              />
+            </div>
+          ) : null}
+
+          {billingSnapshot?.isAdmin ? (
+            <div className="mt-4 lg:hidden">
+              <Link
+                className="flex items-center justify-between gap-4 rounded-[22px] border border-[#17344f]/10 bg-[#17344f]/[0.04] px-4 py-3.5 shadow-[0_10px_24px_rgba(19,33,29,0.04)] transition active:scale-[0.995]"
+                href="/settings/billing/admin"
+              >
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#17344f]/72">
+                    {t("workspace.adminShortcut")}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-ink">{t("workspace.adminShortcutDescription")}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[#17344f] px-3 py-1.5 text-xs font-semibold text-white">
+                  {t("billing.adminEntry")}
+                </span>
+              </Link>
             </div>
           ) : null}
 
@@ -160,6 +208,31 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
               </button>
             </div>
           </section>
+
+          {billingSnapshot?.isAdmin ? (
+            <section className="rounded-[24px] border border-[#17344f]/10 bg-[#17344f]/[0.04] p-5 shadow-[0_18px_40px_rgba(19,33,29,0.04)] sm:rounded-[28px] sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#17344f]/70">
+                    {t("workspace.adminShortcut")}
+                  </p>
+                  <h2 className="mt-3 font-display text-[1.28rem] leading-[1.08] text-ink">
+                    {t("billing.adminTitle")}
+                  </h2>
+                  <p className="mt-2 text-sm leading-7 text-muted">{t("workspace.adminShortcutDescription")}</p>
+                </div>
+              </div>
+
+              <div className="mt-5">
+                <Link
+                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-[#17344f] px-4 text-sm font-semibold text-white"
+                  href="/settings/billing/admin"
+                >
+                  {t("billing.adminEntry")}
+                </Link>
+              </div>
+            </section>
+          ) : null}
         </aside>
       </div>
 
@@ -207,6 +280,55 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
   );
 }
 
+function WorkspaceBillingStatusCard({ billingSnapshot }: { billingSnapshot: BillingSnapshot }) {
+  const { t } = useI18n();
+  const effectivePlan = billingSnapshot.effectivePlan ?? billingSnapshot.plan;
+  const subscriptionPlan = billingSnapshot.subscriptionPlan ?? billingSnapshot.plan;
+  const status = billingSnapshot.lifecycleStatus ?? "inactive";
+
+  if (effectivePlan === "free" && subscriptionPlan === "free") {
+    return null;
+  }
+
+  const title =
+    status === "expired"
+      ? t("workspace.billingStatusExpired")
+      : status === "inactive"
+        ? t("workspace.billingStatusInactive")
+        : effectivePlan === "pro"
+          ? t("workspace.billingStatusPro")
+          : t("workspace.billingStatusFree");
+
+  const hint =
+    status === "expired"
+      ? t("workspace.billingStatusHintExpired")
+      : status === "inactive"
+        ? t("workspace.billingStatusHintInactive")
+        : billingSnapshot.expiresAt
+          ? t("workspace.billingStatusExpiry", {
+              date: formatUpdatedAt(billingSnapshot.expiresAt, billingSnapshot.expiresAt)
+            })
+          : null;
+
+  return (
+    <Link
+      className="mt-4 flex items-start justify-between gap-4 rounded-[22px] border border-amber-200/70 bg-amber-50/80 px-4 py-3.5 shadow-[0_10px_24px_rgba(19,33,29,0.04)] transition active:scale-[0.995]"
+      href="/settings/billing"
+    >
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-700/82">
+          {t("workspace.subscription")}
+        </p>
+        <p className="mt-1 text-sm font-semibold leading-6 text-ink">{title}</p>
+        {hint ? <p className="mt-1 text-sm leading-6 text-muted">{hint}</p> : null}
+      </div>
+      <span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-amber-700">
+        {t("workspace.subscription")}
+      </span>
+    </Link>
+  );
+}
+
 function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
   const { t } = useI18n();
@@ -235,10 +357,11 @@ function ProjectCard({ project }: { project: Project }) {
     const data = (await response.json()) as {
       shareUrl?: string;
       error?: string;
+      code?: string;
     };
 
     if (!response.ok || !data.shareUrl) {
-      throw new Error(data.error ?? t("projectCard.shareLinkGenerateFailed"));
+      throw new Error(data.code === "SHARE_DISABLED" ? t("projectCard.shareDisabled") : (data.error ?? t("projectCard.shareLinkGenerateFailed")));
     }
 
     return new URL(data.shareUrl, window.location.origin).toString();
@@ -276,7 +399,7 @@ function ProjectCard({ project }: { project: Project }) {
         <div>
           <h3 className="text-lg font-semibold text-ink">{project.title}</h3>
           <p className="mt-2 text-sm text-muted">
-            {project.clientName} · {formatUpdatedAt(project.updatedAt)}
+            {project.clientName} · {formatUpdatedAt(project.updatedAt, t("workspace.justUpdated"))}
           </p>
         </div>
 
@@ -388,9 +511,9 @@ function EmptyState({ isSearching }: { isSearching: boolean }) {
   );
 }
 
-function formatUpdatedAt(value: string) {
+function formatUpdatedAt(value: string, fallbackLabel: string) {
   if (!value) {
-    return "刚刚更新";
+    return fallbackLabel;
   }
 
   if (value.includes("今天") || value.includes("昨天")) {

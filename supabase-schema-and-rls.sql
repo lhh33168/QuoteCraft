@@ -11,12 +11,134 @@ create table if not exists public.user_profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email varchar(255) not null unique,
   plan_type varchar(50) not null default 'free',
+  plan_status varchar(50) not null default 'inactive',
+  plan_expires_at timestamptz,
   project_limit integer not null default 3,
+  ai_monthly_limit integer not null default 10,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint user_profiles_plan_type_check
-    check (plan_type in ('free', 'pro'))
+    check (plan_type in ('free', 'pro')),
+  constraint user_profiles_plan_status_check
+    check (plan_status in ('active', 'expired', 'inactive'))
 );
+
+alter table public.user_profiles
+  add column if not exists plan_type varchar(50) not null default 'free';
+
+alter table public.user_profiles
+  add column if not exists plan_status varchar(50) not null default 'inactive';
+
+alter table public.user_profiles
+  add column if not exists plan_expires_at timestamptz;
+
+alter table public.user_profiles
+  add column if not exists project_limit integer not null default 3;
+
+alter table public.user_profiles
+  add column if not exists ai_monthly_limit integer not null default 10;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_profiles_plan_type_check'
+  ) then
+    alter table public.user_profiles
+      add constraint user_profiles_plan_type_check
+      check (plan_type in ('free', 'pro'));
+  end if;
+
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_profiles_plan_status_check'
+  ) then
+    alter table public.user_profiles
+      add constraint user_profiles_plan_status_check
+      check (plan_status in ('active', 'expired', 'inactive'));
+  end if;
+end $$;
+
+create table if not exists public.subscription_upgrade_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  company_name varchar(255),
+  contact_name varchar(255),
+  contact_phone varchar(100),
+  current_plan varchar(50) not null,
+  target_plan varchar(50) not null,
+  status varchar(50) not null default 'pending',
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint subscription_upgrade_requests_current_plan_check
+    check (current_plan in ('free', 'pro')),
+  constraint subscription_upgrade_requests_target_plan_check
+    check (target_plan in ('free', 'pro')),
+  constraint subscription_upgrade_requests_status_check
+    check (status in ('pending', 'approved', 'rejected', 'canceled'))
+);
+
+create index if not exists idx_subscription_upgrade_requests_user_id
+  on public.subscription_upgrade_requests(user_id, created_at desc);
+
+alter table public.subscription_upgrade_requests
+  add column if not exists company_name varchar(255);
+
+alter table public.subscription_upgrade_requests
+  add column if not exists contact_name varchar(255);
+
+alter table public.subscription_upgrade_requests
+  add column if not exists contact_phone varchar(100);
+
+create table if not exists public.subscription_orders (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  current_plan varchar(50) not null,
+  target_plan varchar(50) not null,
+  status varchar(50) not null default 'pending_payment',
+  amount_label varchar(100),
+  payment_method varchar(100),
+  payment_reference varchar(255),
+  payer_name varchar(255),
+  payer_phone varchar(100),
+  note text,
+  reviewed_note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint subscription_orders_current_plan_check
+    check (current_plan in ('free', 'pro')),
+  constraint subscription_orders_target_plan_check
+    check (target_plan in ('free', 'pro')),
+  constraint subscription_orders_status_check
+    check (status in ('pending_payment', 'submitted', 'confirmed', 'rejected', 'canceled'))
+);
+
+create index if not exists idx_subscription_orders_user_id
+  on public.subscription_orders(user_id, created_at desc);
+
+alter table public.subscription_orders
+  add column if not exists amount_label varchar(100);
+
+alter table public.subscription_orders
+  add column if not exists payment_method varchar(100);
+
+alter table public.subscription_orders
+  add column if not exists payment_reference varchar(255);
+
+alter table public.subscription_orders
+  add column if not exists payer_name varchar(255);
+
+alter table public.subscription_orders
+  add column if not exists payer_phone varchar(100);
+
+alter table public.subscription_orders
+  add column if not exists note text;
+
+alter table public.subscription_orders
+  add column if not exists reviewed_note text;
 
 -- -----------------------------------------------------
 -- projects
@@ -149,6 +271,16 @@ create trigger trg_user_profiles_updated_at
 before update on public.user_profiles
 for each row execute procedure public.set_updated_at();
 
+drop trigger if exists trg_subscription_upgrade_requests_updated_at on public.subscription_upgrade_requests;
+create trigger trg_subscription_upgrade_requests_updated_at
+before update on public.subscription_upgrade_requests
+for each row execute procedure public.set_updated_at();
+
+drop trigger if exists trg_subscription_orders_updated_at on public.subscription_orders;
+create trigger trg_subscription_orders_updated_at
+before update on public.subscription_orders
+for each row execute procedure public.set_updated_at();
+
 drop trigger if exists trg_projects_updated_at on public.projects;
 create trigger trg_projects_updated_at
 before update on public.projects
@@ -238,6 +370,8 @@ alter table public.projects enable row level security;
 alter table public.quote_items enable row level security;
 alter table public.share_visits enable row level security;
 alter table public.ai_logs enable row level security;
+alter table public.subscription_upgrade_requests enable row level security;
+alter table public.subscription_orders enable row level security;
 
 -- -----------------------------------------------------
 -- grants
@@ -249,12 +383,16 @@ grant select, insert, update, delete on table public.user_profiles to authentica
 grant select, insert, update, delete on table public.projects to authenticated;
 grant select, insert, update, delete on table public.quote_items to authenticated;
 grant select, insert on table public.ai_logs to authenticated;
+grant select, insert on table public.subscription_upgrade_requests to authenticated;
+grant select, insert on table public.subscription_orders to authenticated;
 
 grant all privileges on table public.user_profiles to service_role;
 grant all privileges on table public.projects to service_role;
 grant all privileges on table public.quote_items to service_role;
 grant all privileges on table public.share_visits to service_role;
 grant all privileges on table public.ai_logs to service_role;
+grant all privileges on table public.subscription_upgrade_requests to service_role;
+grant all privileges on table public.subscription_orders to service_role;
 
 grant usage, select on all sequences in schema public to authenticated, service_role;
 
@@ -286,6 +424,31 @@ on public.user_profiles
 for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
+
+-- subscription_upgrade_requests
+drop policy if exists "subscription_upgrade_requests_select_own" on public.subscription_upgrade_requests;
+create policy "subscription_upgrade_requests_select_own"
+on public.subscription_upgrade_requests
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "subscription_upgrade_requests_insert_own" on public.subscription_upgrade_requests;
+create policy "subscription_upgrade_requests_insert_own"
+on public.subscription_upgrade_requests
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "subscription_orders_select_own" on public.subscription_orders;
+create policy "subscription_orders_select_own"
+on public.subscription_orders
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "subscription_orders_insert_own" on public.subscription_orders;
+create policy "subscription_orders_insert_own"
+on public.subscription_orders
+for insert
+with check (auth.uid() = user_id);
 
 -- projects
 drop policy if exists "projects_select_own" on public.projects;
