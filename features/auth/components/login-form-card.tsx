@@ -42,6 +42,7 @@ export function LoginFormCard() {
     message: callbackError
   });
   const [isPending, startTransition] = useTransition();
+  const [isOpeningDemo, setIsOpeningDemo] = useState(false);
 
   const trimmedEmail = email.trim();
   const emailValid = isValidEmail(trimmedEmail);
@@ -88,6 +89,10 @@ export function LoginFormCard() {
 
     otpInputRef.current?.focus();
   }, [step]);
+
+  useEffect(() => {
+    router.prefetch(demoShareHref);
+  }, [demoShareHref, router]);
 
   async function handleSendCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -253,6 +258,7 @@ export function LoginFormCard() {
 
   const sendButtonLabel = isPending ? "发送中..." : cooldownSeconds > 0 ? `${cooldownSeconds}s 后可重发` : "发送验证码";
   const verifyButtonLabel = isPending ? "验证中..." : "验证并登录";
+  const demoButtonLabel = isOpeningDemo ? "正在打开示例..." : "体验示例项目";
   const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
 
   return (
@@ -321,10 +327,20 @@ export function LoginFormCard() {
               {sendButtonLabel}
             </button>
             <Link
-              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
               href={demoShareHref}
+              onClick={() => setIsOpeningDemo(true)}
+              onFocus={() => router.prefetch(demoShareHref)}
+              onMouseEnter={() => router.prefetch(demoShareHref)}
+              onTouchStart={() => router.prefetch(demoShareHref)}
             >
-              体验示例项目
+              {isOpeningDemo ? (
+                <span
+                  aria-hidden="true"
+                  className="h-4 w-4 animate-spin rounded-full border-2 border-ink/20 border-t-pine"
+                />
+              ) : null}
+              {demoButtonLabel}
             </Link>
           </div>
         </form>
