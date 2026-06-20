@@ -256,25 +256,27 @@ export function LoginFormCard() {
   const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
 
   return (
-    <section className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-soft backdrop-blur sm:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 shadow-soft backdrop-blur sm:p-8">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-3xl text-ink">邮箱验证码登录</h2>
         </div>
-        <div className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted sm:px-4">
-          <span>步骤</span>
-          <span className="text-sm tracking-normal text-ink">{step === "request-code" ? "1 / 2" : "2 / 2"}</span>
+        <div className="inline-flex items-center gap-3 self-start rounded-full bg-[#f4f7f4] px-3 py-2 ring-1 ring-black/6">
+          <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted ring-1 ring-black/6">
+            步骤
+          </span>
+          <span className="text-sm font-semibold text-ink">{step === "request-code" ? "1 / 2" : "2 / 2"}</span>
         </div>
       </div>
 
-      <div className="mt-6 space-y-2">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+      <div className="mt-6 space-y-2.5">
+        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
           <span>登录进度</span>
           <span>{step === "request-code" ? "填写邮箱" : "输入验证码"}</span>
         </div>
-        <div className="h-2 rounded-full bg-black/5">
+        <div className="h-1.5 overflow-hidden rounded-full bg-[#edf1ee]">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-[#1b5e54] to-[#2f8b71] transition-all duration-300"
+            className="h-full rounded-full bg-[linear-gradient(90deg,#245d53_0%,#3d8b77_100%)] transition-all duration-300"
             style={{ width: stepProgress }}
           />
         </div>
@@ -312,14 +314,14 @@ export function LoginFormCard() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
-              className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/50 sm:px-5"
+              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-pine px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(36,93,83,0.18)] transition duration-200 disabled:cursor-not-allowed disabled:bg-pine/50 disabled:shadow-none"
               disabled={sendDisabled}
               type="submit"
             >
               {sendButtonLabel}
             </button>
             <Link
-              className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:px-5"
+              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
               href={demoShareHref}
             >
               体验示例项目
@@ -390,14 +392,14 @@ export function LoginFormCard() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
-              className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/50 sm:px-5"
+              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-pine px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(36,93,83,0.18)] transition duration-200 disabled:cursor-not-allowed disabled:bg-pine/50 disabled:shadow-none"
               disabled={isPending || otpCode.length !== EMAIL_OTP_LENGTH}
               type="submit"
             >
               {verifyButtonLabel}
             </button>
             <button
-              className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:px-5"
+              className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
               disabled={isPending}
               onClick={handleBackToRequest}
               type="button"
