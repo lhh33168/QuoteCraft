@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useI18n } from "@/shared/i18n/i18n-provider";
+import { formatMessage } from "@/shared/i18n/format-message";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
@@ -22,19 +23,6 @@ type ShareDocumentPageProps = {
 type ExportState = "idle" | "processing" | "done";
 type NavigationState = "idle" | "share" | "print" | "workspace" | "login" | "new";
 
-const projectTypeLabelMap: Record<ProjectType, string> = {
-  website: "官网 / 品牌网站",
-  mini_program: "微信小程序",
-  admin_panel: "后台管理系统",
-  custom: "定制开发"
-};
-
-const exportSteps = [
-  "点击“导出 PDF 到本地”",
-  "在系统面板里选择“保存为 PDF”",
-  "选择保存位置后完成下载"
-];
-
 function renderParagraph(value: string | null | undefined, fallback: string) {
   return value?.trim() ? value : fallback;
 }
@@ -46,6 +34,7 @@ export function ShareDocumentPage({
   autoPrint = false
 }: ShareDocumentPageProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const { project, quoteItems, token } = shareDocument;
   const sharePageHref = `/share/${token}` as Route;
   const printPageHref = `/share/${token}?print=1` as Route;
@@ -57,9 +46,18 @@ export function ShareDocumentPage({
   const [exportState, setExportState] = useState<ExportState>(autoPrint ? "processing" : "idle");
   const [navigationState, setNavigationState] = useState<NavigationState>("idle");
   const [exportMessage, setExportMessage] = useState<string | null>(
-    autoPrint ? "正在准备导出 PDF，请稍候..." : null
+    autoPrint ? t("share.exportPreparingMessage") : null
   );
   const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
+
+  const projectTypeLabelMap: Record<ProjectType, string> = {
+    website: t("projectCard.website"),
+    mini_program: t("projectCard.miniProgram"),
+    admin_panel: t("projectCard.adminPanel"),
+    custom: t("projectCard.custom")
+  };
+
+  const exportSteps = [t("share.exportStep1"), t("share.exportStep2"), t("share.exportStep3")];
 
   function prefetchTargets() {
     router.prefetch(sharePageHref);
@@ -73,7 +71,7 @@ export function ShareDocumentPage({
 
   function handlePrintDownload() {
     setExportState("processing");
-    setExportMessage("系统打印面板正在打开，请在面板中选择“保存为 PDF”或“另存为 PDF”。");
+    setExportMessage(t("share.exportPreparingMessage"));
     window.print();
   }
 
@@ -92,12 +90,12 @@ export function ShareDocumentPage({
     }
 
     const previousTitle = window.document.title;
-    window.document.title = `${project.title || "报价方案"}-报价单`;
+    window.document.title = `${project.title || t("share.untitledProject")} - ${t("share.printPreviewTitle")}`;
 
     return () => {
       window.document.title = previousTitle;
     };
-  }, [isPrintMode, project.title]);
+  }, [isPrintMode, project.title, t]);
 
   useEffect(() => {
     if (!isPrintMode || !autoPrint || hasAutoPrinted) {
@@ -121,23 +119,23 @@ export function ShareDocumentPage({
 
     function handleAfterPrint() {
       setExportState("done");
-      setExportMessage("导出面板已关闭。你可以返回方案页，或再次点击“导出 PDF 到本地”。");
+      setExportMessage(t("share.exportFinishedMessage"));
     }
 
     window.addEventListener("afterprint", handleAfterPrint);
     return () => window.removeEventListener("afterprint", handleAfterPrint);
-  }, [isPrintMode]);
+  }, [isPrintMode, t]);
 
   const exportButtonLabel =
-    exportState === "processing" ? "正在准备导出..." : "导出 PDF 到本地";
+    exportState === "processing" ? t("share.exportingPdf") : t("share.exportPdfToLocal");
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
       <PageTopBar
         backHref={isPrintMode ? sharePageHref : isLoggedIn ? workspaceHref : loginHref}
-        backLabel={isPrintMode ? "返回方案页" : isLoggedIn ? "返回工作台" : "返回登录"}
-        eyebrow="报价助手"
-        title={isPrintMode ? "PDF 导出预览" : "客户查看页"}
+        backLabel={isPrintMode ? t("share.backToProposal") : isLoggedIn ? t("share.backToWorkspace") : t("share.backToLogin")}
+        eyebrow={t("share.brand")}
+        title={isPrintMode ? t("share.printPreviewTitle") : t("share.customerPageTitle")}
       />
 
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-36 pt-4 sm:px-6 sm:pb-40 sm:pt-5 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
@@ -146,15 +144,15 @@ export function ShareDocumentPage({
             <div className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50/92 p-4 text-sm leading-7 text-sky-900 print:hidden sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">导出指引</p>
-                  <p className="mt-2 font-semibold text-ink">当前正在查看适合导出 PDF 的打印预览页。</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">{t("share.printGuideEyebrow")}</p>
+                  <p className="mt-2 font-semibold text-ink">{t("share.printGuideTitle")}</p>
                 </div>
                 <span className="inline-flex w-fit items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-800">
                   {exportState === "processing"
-                    ? "导出进行中"
+                    ? t("share.printGuideProcessing")
                     : exportState === "done"
-                      ? "可以再次导出"
-                      : "等待操作"}
+                      ? t("share.printGuideReady")
+                      : t("share.printGuideWaiting")}
                 </span>
               </div>
 
@@ -176,58 +174,60 @@ export function ShareDocumentPage({
             </div>
           ) : (
             <div className="mb-5 rounded-[24px] border border-amber-200 bg-amber-50/92 p-4 text-sm leading-7 text-amber-800 print:hidden sm:p-5">
-              当前页面用于客户查看方案详情与报价内容。需要留档、发给同事，或保存到手机时，可点击“导出 PDF 到本地”。
+              {t("share.shareIntroMessage")}
             </div>
           )}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
-              <span>公开只读</span>
+              <span>{t("share.readonlyBadge")}</span>
               <span className="h-1 w-1 rounded-full bg-pine/40" />
-              <span>{isPrintMode ? "PDF 导出页" : "客户分享页"}</span>
+              <span>{isPrintMode ? t("share.pdfExportPage") : t("share.customerSharePage")}</span>
             </div>
-            <p className="text-xs leading-6 text-muted">分享标识：{token}</p>
+            <p className="text-xs leading-6 text-muted">{formatMessage(t("share.shareTokenLabel"), { token })}</p>
           </div>
 
           <header className="mt-5 rounded-[28px] bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-5 py-7 text-white sm:px-6 sm:py-8 print:mt-0 print:rounded-none">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-              QuoteCraft Proposal
+              {t("share.proposalEyebrow")}
             </div>
             <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
-              {project.title || "未命名项目"}
+              {project.title || t("share.untitledProject")}
             </h1>
             <p className="mt-4 max-w-3xl text-sm leading-8 text-white/80 sm:text-base">
-              {renderParagraph(project.summary, "这是一份用于客户查看和沟通的项目方案。")}
+              {renderParagraph(project.summary, t("share.defaultSummary"))}
             </p>
           </header>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <InfoCard label="客户名称" value={project.clientName || "待补充"} />
-            <InfoCard label="项目类型" value={projectTypeLabelMap[project.projectType]} />
-            <InfoCard label="所属行业" value={project.industry || "通用企业服务"} />
-            <InfoCard label="预计周期" value={project.duration || "待确认"} />
+            <InfoCard label={t("share.clientName")} value={project.clientName || t("share.defaultDuration")} />
+            <InfoCard label={t("share.projectType")} value={projectTypeLabelMap[project.projectType]} />
+            <InfoCard label={t("share.industry")} value={project.industry || t("share.defaultIndustry")} />
+            <InfoCard label={t("share.duration")} value={project.duration || t("share.defaultDuration")} />
           </div>
 
           <section className="mt-8 grid gap-5 border-t border-black/8 pt-6 sm:grid-cols-2">
-            <ContentBlock title="项目背景" content={renderParagraph(project.background, "暂无项目背景说明。")} />
-            <ContentBlock title="项目目标" content={renderParagraph(project.goal, "暂无项目目标说明。")} />
+            <ContentBlock title={t("share.projectBackground")} content={renderParagraph(project.background, t("share.defaultBackground"))} />
+            <ContentBlock title={t("share.projectGoal")} content={renderParagraph(project.goal, t("share.defaultGoal"))} />
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
-            <ContentBlock title="服务范围" content={renderParagraph(project.scope, "暂无服务范围说明。")} />
+            <ContentBlock title={t("share.serviceScope")} content={renderParagraph(project.scope, t("share.defaultScope"))} />
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
             <ContentBlock
-              title="原始需求摘要"
-              content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")}
+              title={t("share.rawRequirementSummary")}
+              content={renderParagraph(project.rawRequirement, t("share.defaultRawRequirement"))}
             />
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">报价明细</h2>
-              <p className="text-xs leading-6 text-muted">共 {quoteItems.length} 个报价项</p>
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">{t("share.quoteDetails")}</h2>
+              <p className="text-xs leading-6 text-muted">
+                {formatMessage(t("share.quoteItemsCount"), { count: quoteItems.length })}
+              </p>
             </div>
             <div className="mt-4 space-y-4">
               {quoteItems.map((item) => (
@@ -237,15 +237,15 @@ export function ShareDocumentPage({
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-base font-semibold text-ink">{item.name}</h3>
                         <span className="rounded-full bg-white px-3 py-1 text-xs text-muted">
-                          {item.quantity} {item.unit || "项"}
+                          {item.quantity} {item.unit || t("share.defaultUnit")}
                         </span>
                       </div>
                       <p className="mt-2 text-sm leading-7 text-muted">
-                        {renderParagraph(item.description, "暂无报价项说明。")}
+                        {renderParagraph(item.description, t("share.defaultItemDescription"))}
                       </p>
                     </div>
                     <div className="shrink-0">
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">小计</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted">{t("share.subtotal")}</p>
                       <strong className="mt-2 block font-display text-2xl text-pine">
                         {formatMoney(item.subtotal)}
                       </strong>
@@ -257,22 +257,24 @@ export function ShareDocumentPage({
           </section>
 
           <section className="mt-8 rounded-[24px] bg-gradient-to-r from-pineSoft to-[#f6efe3] p-5 sm:p-6">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">项目总金额</span>
-            <strong className="mt-2 block font-display text-4xl text-pine">
-              {formatMoney(project.totalPrice)}
-            </strong>
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{t("share.totalPrice")}</span>
+            <strong className="mt-2 block font-display text-4xl text-pine">{formatMoney(project.totalPrice)}</strong>
             <p className="mt-3 text-sm leading-7 text-muted">
-              交付说明：{renderParagraph(project.deliveryNote, "暂无交付说明。")}
+              {formatMessage(t("share.deliveryNote"), {
+                value: renderParagraph(project.deliveryNote, t("share.defaultDeliveryNote"))
+              })}
             </p>
             <p className="mt-2 text-sm leading-7 text-muted">
-              项目备注：{renderParagraph(project.remark, "暂无备注。")}
+              {formatMessage(t("share.remark"), {
+                value: renderParagraph(project.remark, t("share.defaultRemark"))
+              })}
             </p>
           </section>
         </section>
 
         {isPrintMode ? (
           <MobileActionBar
-            note="导出 PDF 后，文件保存位置由系统打印面板决定。"
+            note={t("share.printNote")}
             primaryAction={
               <button
                 className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)] disabled:cursor-not-allowed disabled:bg-pine/60"
@@ -280,7 +282,7 @@ export function ShareDocumentPage({
                 onClick={handlePrintDownload}
                 type="button"
               >
-                {exportState === "processing" ? "导出中..." : "导出 PDF"}
+                {exportState === "processing" ? t("share.exportingPdf") : t("share.exportPdf")}
               </button>
             }
             secondaryAction={
@@ -292,7 +294,7 @@ export function ShareDocumentPage({
                 onTouchStart={prefetchTargets}
                 type="button"
               >
-                {navigationState === "share" ? "正在返回..." : "返回方案页"}
+                {navigationState === "share" ? t("workspace.creatingProject") : t("share.returnToProposal")}
               </button>
             }
           />
@@ -300,16 +302,14 @@ export function ShareDocumentPage({
           <>
             <aside className="hidden w-full shrink-0 lg:sticky lg:top-28 lg:block lg:w-[320px] print:hidden">
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-soft sm:p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
-                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">把这份方案直接发给客户，或导出留档</h2>
-                <p className="mt-4 text-sm leading-7 text-muted">
-                  分享页适合快速查看，导出 PDF 更适合留档、发邮件，或发给团队内部继续跟进。
-                </p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">{t("share.outputActions")}</p>
+                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">{t("share.outputTitle")}</h2>
+                <p className="mt-4 text-sm leading-7 text-muted">{t("share.outputDescription")}</p>
 
                 <div className="mt-6 rounded-[22px] border border-pine/10 bg-pine/5 p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-ink">主推荐操作</p>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-pine">推荐</span>
+                    <p className="text-sm font-semibold text-ink">{t("share.recommendedAction")}</p>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-pine">{t("share.recommendedTag")}</span>
                   </div>
                   <button
                     className="mt-3 inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
@@ -323,7 +323,7 @@ export function ShareDocumentPage({
                       <ButtonLoadingContent
                         idleLabel={exportButtonLabel}
                         loading={navigationState === "print"}
-                        loadingLabel="正在打开..."
+                        loadingLabel={t("workspace.creatingProject")}
                       />
                     </span>
                   </button>
@@ -347,9 +347,9 @@ export function ShareDocumentPage({
                   >
                     <span className="inline-flex items-center gap-2">
                       <ButtonLoadingContent
-                        idleLabel="预览 PDF 版"
+                        idleLabel={t("share.previewPdfVersion")}
                         loading={navigationState === "print"}
-                        loadingLabel="正在打开..."
+                        loadingLabel={t("workspace.creatingProject")}
                         spinnerTone="dark"
                       />
                     </span>
@@ -366,9 +366,9 @@ export function ShareDocumentPage({
                       >
                         <span className="inline-flex items-center gap-2">
                           <ButtonLoadingContent
-                            idleLabel="返回项目工作台"
+                            idleLabel={t("share.backToWorkspaceButton")}
                             loading={navigationState === "workspace"}
-                            loadingLabel="正在打开..."
+                            loadingLabel={t("workspace.creatingProject")}
                             spinnerTone="dark"
                           />
                         </span>
@@ -383,9 +383,9 @@ export function ShareDocumentPage({
                       >
                         <span className="inline-flex items-center gap-2">
                           <ButtonLoadingContent
-                            idleLabel="新建正式项目"
+                            idleLabel={t("share.createFormalProject")}
                             loading={navigationState === "new"}
-                            loadingLabel="正在打开..."
+                            loadingLabel={t("workspace.creatingProject")}
                             spinnerTone="dark"
                           />
                         </span>
@@ -403,9 +403,9 @@ export function ShareDocumentPage({
                       >
                         <span className="inline-flex items-center gap-2">
                           <ButtonLoadingContent
-                            idleLabel="登录后创建自己的方案"
+                            idleLabel={t("share.loginToCreateProject")}
                             loading={navigationState === "login"}
-                            loadingLabel="正在打开..."
+                            loadingLabel={t("workspace.creatingProject")}
                             spinnerTone="dark"
                           />
                         </span>
@@ -420,9 +420,9 @@ export function ShareDocumentPage({
                       >
                         <span className="inline-flex items-center gap-2">
                           <ButtonLoadingContent
-                            idleLabel="返回登录页"
+                            idleLabel={t("share.backToLoginButton")}
                             loading={navigationState === "login"}
-                            loadingLabel="正在打开..."
+                            loadingLabel={t("workspace.creatingProject")}
                             spinnerTone="dark"
                           />
                         </span>
@@ -432,13 +432,13 @@ export function ShareDocumentPage({
                 </div>
 
                 <div className="mt-6 rounded-[22px] border border-black/8 bg-black/[0.03] p-4 text-sm leading-7 text-muted">
-                  当前是只读分享页，客户可以查看方案和报价，但不会修改你的项目数据。
+                  {t("share.readonlyNotice")}
                 </div>
               </section>
             </aside>
 
             <MobileActionBar
-              note="导出后会打开系统打印面板，请选择“保存为 PDF”。"
+              note={t("share.printNote")}
               primaryAction={
                 <button
                   className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)]"
@@ -449,7 +449,11 @@ export function ShareDocumentPage({
                   type="button"
                 >
                   <span className="inline-flex items-center gap-2">
-                    <ButtonLoadingContent idleLabel="导出 PDF" loading={navigationState === "print"} loadingLabel="正在打开..." />
+                    <ButtonLoadingContent
+                      idleLabel={t("share.exportPdf")}
+                      loading={navigationState === "print"}
+                      loadingLabel={t("workspace.creatingProject")}
+                    />
                   </span>
                 </button>
               }
@@ -464,9 +468,9 @@ export function ShareDocumentPage({
                 >
                   <span className="inline-flex items-center gap-2">
                     <ButtonLoadingContent
-                      idleLabel="预览 PDF"
+                      idleLabel={t("share.previewPdfVersion")}
                       loading={navigationState === "print"}
-                      loadingLabel="正在打开..."
+                      loadingLabel={t("workspace.creatingProject")}
                       spinnerTone="dark"
                     />
                   </span>

@@ -5,10 +5,12 @@ import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { ProjectListActions } from "@/features/workspace/components/project-list-actions";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { Project } from "@/shared/types/project";
 import { AppShell } from "@/shared/ui/app-shell";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
+import { LanguageSwitcher } from "@/shared/ui/language-switcher";
 import { MobileActionBar } from "@/shared/ui/mobile-action-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
@@ -21,15 +23,9 @@ type WorkspacePageProps = {
 
 type WorkspaceActionState = "idle" | "create" | "template";
 
-const projectTypeLabelMap: Record<Project["projectType"], string> = {
-  website: "官网开发",
-  mini_program: "小程序开发",
-  admin_panel: "后台管理系统",
-  custom: "定制项目"
-};
-
 export function WorkspacePage({ projects, notice, searchValue, onSearchChange }: WorkspacePageProps) {
   const router = useRouter();
+  const { t } = useI18n();
   const hasProjects = projects.length > 0;
   const isSearching = searchValue.trim().length > 0;
   const [actionState, setActionState] = useState<WorkspaceActionState>("idle");
@@ -54,79 +50,47 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
   return (
     <AppShell
       showBackButton={false}
-      backHref="/"
-      backLabel="返回上一页"
-      eyebrow="项目工作台"
-      title="项目工作台"
-      description="优先展示待推进的方案、项目列表和快捷动作，让整个报价推进过程更顺手。"
+      eyebrow={t("workspace.eyebrow")}
+      topBarTitle={t("workspace.title")}
+      topBarSubtitle={null}
+      title={t("workspace.title")}
+      description={t("workspace.description")}
+      showHeader={false}
+      showHeaderEyebrow={false}
+      heroVariant="compact"
       mobileBottomBarSpacing={hasProjects ? "comfortable" : "compact"}
-      actions={
-        <>
-          <Link
-            className="hidden min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink lg:inline-flex"
-            href="/settings/billing"
-          >
-            查看订阅
-          </Link>
-          <button
-            className="hidden min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white lg:inline-flex"
-            onClick={handleOpenCreate}
-            onFocus={() => router.prefetch(createHref)}
-            onMouseEnter={() => router.prefetch(createHref)}
-            onTouchStart={() => router.prefetch(createHref)}
-            type="button"
-          >
-            <span className="inline-flex items-center gap-2">
-              <ButtonLoadingContent
-                idleLabel="新建项目"
-                loading={actionState === "create"}
-                loadingLabel="正在打开..."
-              />
-            </span>
-          </button>
-        </>
-      }
+      topBarRight={<LanguageSwitcher compact />}
     >
       <div className="grid gap-6 pb-28 lg:grid-cols-[1.45fr_0.8fr] lg:gap-7 lg:pb-0">
-        <section className="px-1 py-1 sm:px-0">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <section className="px-1 py-0.5 sm:px-0">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="font-display text-[1.95rem] leading-[1.08] text-ink sm:text-[2.25rem]">我的项目</h2>
-              <p className="mt-2 text-sm leading-7 text-muted">从这里继续编辑、分享，或者复用历史项目。</p>
+              <h2 className="font-display text-[1.38rem] leading-[1.08] text-ink sm:text-[1.6rem]">
+                {t("workspace.myProjects")}
+              </h2>
             </div>
+
             <div className="w-full sm:max-w-sm">
               <label className="sr-only" htmlFor="workspace-search">
-                搜索项目
+                {t("workspace.myProjects")}
               </label>
               <input
-                className="w-full rounded-[18px] border border-black/8 bg-white/88 px-4 py-3 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-pine/30 focus:bg-white focus:ring-2 focus:ring-pine/8"
+                className="w-full rounded-[16px] border border-black/8 bg-white/90 px-4 py-2.5 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-pine/30 focus:bg-white focus:ring-2 focus:ring-pine/8"
                 id="workspace-search"
                 onChange={(event) => onSearchChange(event.target.value)}
-                placeholder="搜索项目名称 / 客户 / 公司 / 类型"
+                placeholder={t("workspace.searchPlaceholder")}
                 value={searchValue}
               />
             </div>
           </div>
 
-          <div className="mt-3 flex justify-end lg:hidden">
-            <Link
-              className="inline-flex items-center gap-1 text-sm font-medium text-muted transition hover:text-ink"
-              href="/settings/billing"
-            >
-              订阅与额度
-              <span aria-hidden="true" className="text-base leading-none">
-                ›
-              </span>
-            </Link>
-          </div>
-
           {notice ? (
-            <div className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">
+            <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">
               {notice}
             </div>
           ) : null}
 
-          <div className="mt-6 space-y-4">
+          <div className="mt-4 space-y-4">
             {hasProjects ? (
               projects.map((project) => <ProjectCard key={project.id} project={project} />)
             ) : (
@@ -138,16 +102,27 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
         <aside className="hidden space-y-5 lg:block">
           <section className="rounded-[26px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-5 text-white sm:rounded-[30px] sm:p-6">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-              Today
+              {t("workspace.today")}
             </div>
-            <h2 className="mt-4 font-display text-[2rem] leading-[1.02] sm:text-[2.35rem]">下午 4 点前完成 2 份方案</h2>
-            <p className="mt-4 text-sm leading-7 text-white/80">
-              当前有 1 个客户待分享，2 个历史项目待复用。先把报价发出去，再继续润色方案。
-            </p>
+            <h2 className="mt-4 font-display text-[1.6rem] leading-[1.06] sm:text-[1.9rem]">
+              {t("workspace.todayHeadline")}
+            </h2>
+            <p className="mt-4 text-sm leading-7 text-white/80">{t("workspace.todayDescription")}</p>
           </section>
 
           <section className="rounded-[24px] border border-white/80 bg-white/76 p-5 shadow-[0_18px_40px_rgba(19,33,29,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-6">
-            <h2 className="font-display text-[1.7rem] leading-[1.08] text-ink sm:text-[1.95rem]">快捷动作</h2>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-display text-[1.35rem] leading-[1.08] text-ink sm:text-[1.55rem]">
+                {t("workspace.quickActions")}
+              </h2>
+              <Link
+                className="inline-flex min-h-9 items-center justify-center rounded-full border border-black/8 bg-white px-3.5 text-[12px] font-semibold whitespace-nowrap text-muted transition hover:text-ink"
+                href="/settings/billing"
+              >
+                {t("workspace.subscription")}
+              </Link>
+            </div>
+
             <div className="mt-5 grid gap-3">
               <button
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
@@ -159,12 +134,13 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
               >
                 <span className="inline-flex items-center gap-2">
                   <ButtonLoadingContent
-                    idleLabel="创建新报价"
+                    idleLabel={t("workspace.createQuote")}
                     loading={actionState === "create"}
-                    loadingLabel="正在打开..."
+                    loadingLabel={t("workspace.creatingProject")}
                   />
                 </span>
               </button>
+
               <button
                 className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink"
                 onClick={handleOpenTemplate}
@@ -175,9 +151,9 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
               >
                 <span className="inline-flex items-center gap-2">
                   <ButtonLoadingContent
-                    idleLabel="基于示例创建"
+                    idleLabel={t("workspace.createFromTemplate")}
                     loading={actionState === "template"}
-                    loadingLabel="正在打开..."
+                    loadingLabel={t("workspace.creatingProject")}
                     spinnerTone="dark"
                   />
                 </span>
@@ -188,7 +164,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
       </div>
 
       <MobileActionBar
-        note="可从这里快速创建新项目，或直接使用示例模板开始。"
+        className="shadow-[0_-10px_28px_rgba(19,33,29,0.08)]"
         primaryAction={
           <button
             className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)]"
@@ -200,9 +176,9 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           >
             <span className="inline-flex items-center gap-2">
               <ButtonLoadingContent
-                idleLabel="新建项目"
+                idleLabel={t("workspace.createProject")}
                 loading={actionState === "create"}
-                loadingLabel="正在打开..."
+                loadingLabel={t("workspace.creatingProject")}
               />
             </span>
           </button>
@@ -218,9 +194,9 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           >
             <span className="inline-flex items-center gap-2">
               <ButtonLoadingContent
-                idleLabel="示例模板"
+                idleLabel={t("workspace.template")}
                 loading={actionState === "template"}
-                loadingLabel="正在打开..."
+                loadingLabel={t("workspace.creatingProject")}
                 spinnerTone="dark"
               />
             </span>
@@ -233,11 +209,19 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
 
 function ProjectCard({ project }: { project: Project }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [message, setMessage] = useState<string | null>(null);
   const [navState, setNavState] = useState<"idle" | "edit" | "share">("idle");
   const [isCopyPending, startCopyTransition] = useTransition();
   const editHref = `/projects/${project.id}` as Route;
   const shareHref = `/projects/${project.id}/share` as Route;
+
+  const projectTypeLabelMap: Record<Project["projectType"], string> = {
+    website: t("projectCard.website"),
+    mini_program: t("projectCard.miniProgram"),
+    admin_panel: t("projectCard.adminPanel"),
+    custom: t("projectCard.custom")
+  };
 
   function prefetchProjectRoutes() {
     router.prefetch(editHref);
@@ -254,7 +238,7 @@ function ProjectCard({ project }: { project: Project }) {
     };
 
     if (!response.ok || !data.shareUrl) {
-      throw new Error(data.error ?? "生成分享链接失败。");
+      throw new Error(data.error ?? t("projectCard.shareLinkGenerateFailed"));
     }
 
     return new URL(data.shareUrl, window.location.origin).toString();
@@ -262,26 +246,26 @@ function ProjectCard({ project }: { project: Project }) {
 
   function handleOpenEditor() {
     setNavState("edit");
-    setMessage("正在打开编辑页...");
+    setMessage(t("projectCard.openingEditor"));
     router.push(editHref);
   }
 
   function handleOpenSharePage() {
     setNavState("share");
-    setMessage("正在打开客户页...");
+    setMessage(t("projectCard.openingCustomerPage"));
     window.open(shareHref, "_blank", "noopener,noreferrer");
   }
 
   function handleCopyShareLink() {
     startCopyTransition(async () => {
-      setMessage("正在生成分享链接...");
+      setMessage(t("projectCard.generatingShareLink"));
 
       try {
         const shareUrl = await ensureShareUrl();
         await navigator.clipboard.writeText(shareUrl);
-        setMessage("分享链接已复制到剪贴板。");
+        setMessage(t("projectCard.shareLinkCopied"));
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "复制分享链接失败，请稍后重试。");
+        setMessage(error instanceof Error ? error.message : t("projectCard.shareLinkFailed"));
       }
     });
   }
@@ -295,13 +279,21 @@ function ProjectCard({ project }: { project: Project }) {
             {project.clientName} · {formatUpdatedAt(project.updatedAt)}
           </p>
         </div>
+
         <StatusBadge tone={project.status}>
-          {project.status === "draft" ? "草稿" : project.status === "generated" ? "已生成" : "已分享"}
+          {project.status === "draft"
+            ? t("projectCard.draft")
+            : project.status === "generated"
+              ? t("projectCard.generated")
+              : t("projectCard.shared")}
         </StatusBadge>
       </div>
 
       <div className="mt-4 flex flex-col gap-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-        <span>项目类型：{projectTypeLabelMap[project.projectType]}</span>
+        <span>
+          {t("projectCard.projectType")}
+          {projectTypeLabelMap[project.projectType]}
+        </span>
         <strong className="font-display text-2xl text-pine">{formatMoney(project.totalPrice)}</strong>
       </div>
 
@@ -316,12 +308,13 @@ function ProjectCard({ project }: { project: Project }) {
         >
           <span className="inline-flex items-center gap-2">
             <ButtonLoadingContent
-              idleLabel="继续编辑"
+              idleLabel={t("projectCard.continueEditing")}
               loading={navState === "edit"}
-              loadingLabel="正在打开..."
+              loadingLabel={t("workspace.creatingProject")}
             />
           </span>
         </button>
+
         <button
           className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink"
           onClick={handleOpenSharePage}
@@ -332,13 +325,14 @@ function ProjectCard({ project }: { project: Project }) {
         >
           <span className="inline-flex items-center gap-2">
             <ButtonLoadingContent
-              idleLabel="查看客户页"
+              idleLabel={t("projectCard.openCustomerPage")}
               loading={navState === "share"}
-              loadingLabel="正在打开..."
+              loadingLabel={t("workspace.creatingProject")}
               spinnerTone="dark"
             />
           </span>
         </button>
+
         <button
           className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
           disabled={isCopyPending}
@@ -347,9 +341,9 @@ function ProjectCard({ project }: { project: Project }) {
         >
           <span className="inline-flex items-center gap-2">
             <ButtonLoadingContent
-              idleLabel="复制分享链接"
+              idleLabel={t("projectCard.copyShareLink")}
               loading={isCopyPending}
-              loadingLabel="正在复制..."
+              loadingLabel={t("common.processing")}
               spinnerTone="dark"
             />
           </span>
@@ -366,26 +360,28 @@ function ProjectCard({ project }: { project: Project }) {
 }
 
 function EmptyState({ isSearching }: { isSearching: boolean }) {
+  const { t } = useI18n();
+
   return (
-    <div className="rounded-[26px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(250,248,242,0.48))] px-5 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:rounded-[28px] sm:px-6 sm:py-10">
-      <h3 className="text-lg font-semibold text-ink">{isSearching ? "没有找到匹配项目" : "还没有项目"}</h3>
-      <p className="mx-auto mt-3 max-w-[26rem] text-sm leading-7 text-muted">
-        {isSearching
-          ? "试试更换关键词，或者用客户名、公司名、项目类型继续搜索。"
-          : "从一个新项目开始，或者先基于示例创建一份方案。"}
+    <div className="rounded-[24px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(250,248,242,0.5))] px-5 py-7 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:rounded-[26px] sm:px-6 sm:py-8">
+      <h3 className="text-lg font-semibold text-ink">
+        {isSearching ? t("workspace.emptySearchTitle") : t("workspace.emptyTitle")}
+      </h3>
+      <p className="mx-auto mt-3 max-w-[24rem] text-sm leading-7 text-muted">
+        {isSearching ? t("workspace.emptySearchDescription") : t("workspace.emptyDescription")}
       </p>
-      <div className="mt-7 flex flex-wrap justify-center gap-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
+          className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-6 text-sm font-semibold whitespace-nowrap text-white"
           href="/projects/new"
         >
-          新建项目
+          {t("workspace.createProject")}
         </Link>
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/8 bg-white/92 px-5 text-sm font-semibold whitespace-nowrap text-ink"
+          className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/8 bg-white/92 px-6 text-sm font-semibold whitespace-nowrap text-ink"
           href="/projects/new?template=education-site"
         >
-          使用示例模板
+          {t("workspace.useTemplate")}
         </Link>
       </div>
     </div>

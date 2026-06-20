@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -19,13 +20,14 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = "确认",
-  cancelLabel = "取消",
+  confirmLabel,
+  cancelLabel,
   confirmTone = "primary",
   pending = false,
   onConfirm,
   onCancel
 }: ConfirmDialogProps) {
+  const { t } = useI18n();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -53,6 +55,9 @@ export function ConfirmDialog({
     return null;
   }
 
+  const resolvedConfirmLabel = confirmLabel ?? t("dialog.confirmAction");
+  const resolvedCancelLabel = cancelLabel ?? t("dialog.cancel");
+
   return createPortal(
     <div
       aria-modal="true"
@@ -60,7 +65,7 @@ export function ConfirmDialog({
       role="dialog"
     >
       <button
-        aria-label="关闭确认弹窗"
+        aria-label={t("dialog.close")}
         className="absolute inset-0 h-full w-full cursor-default"
         onClick={onCancel}
         type="button"
@@ -73,7 +78,7 @@ export function ConfirmDialog({
 
       <div className="relative z-[1] w-full max-w-md rounded-[28px] border border-white/80 bg-[#fcfdfb] p-6 shadow-[0_28px_90px_rgba(19,33,29,0.24)] sm:p-7">
         <div className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-red-600">
-          请确认
+          {t("dialog.confirm")}
         </div>
         <h3 className="mt-4 text-[1.4rem] font-semibold leading-[1.12] text-ink">{title}</h3>
         <p className="mt-3 text-sm leading-7 text-muted">{description}</p>
@@ -85,7 +90,7 @@ export function ConfirmDialog({
             onClick={onCancel}
             type="button"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             className={[
@@ -98,7 +103,7 @@ export function ConfirmDialog({
             onClick={onConfirm}
             type="button"
           >
-            {pending ? "处理中..." : confirmLabel}
+            {pending ? t("dialog.pending") : resolvedConfirmLabel}
           </button>
         </div>
       </div>

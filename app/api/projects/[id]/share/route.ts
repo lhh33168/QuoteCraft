@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { projectService } from "@/server/services/project-service";
+import { createRequestTranslator } from "@/shared/i18n/server";
 
 type RouteProps = {
   params: Promise<{
@@ -7,7 +8,9 @@ type RouteProps = {
   }>;
 };
 
-export async function POST(_: Request, { params }: RouteProps) {
+export async function POST(request: Request, { params }: RouteProps) {
+  const { t } = createRequestTranslator(request);
+
   try {
     const { id } = await params;
     const result = await projectService.ensureProjectShareToken(id);
@@ -16,7 +19,7 @@ export async function POST(_: Request, { params }: RouteProps) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "生成分享链接失败。"
+        error: error instanceof Error ? error.message : t("api.projects.shareFailed")
       },
       { status: 500 }
     );

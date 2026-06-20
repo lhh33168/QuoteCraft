@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
 import { isSupabaseBrowserConfigured } from "@/server/supabase/keys";
+import { createRequestTranslator } from "@/shared/i18n/server";
 
-function mapVerifyError(errorMessage: string) {
+function mapVerifyError(errorMessage: string, t: (path: string, values?: Record<string, string | number>) => string) {
   const normalized = errorMessage.toLowerCase();
 
   if (normalized.includes("expired")) {
     return {
       status: 400,
-      message: "验证码已过期，请重新获取。"
+      message: t("api.auth.verifyExpired")
     };
   }
 
   if (normalized.includes("invalid")) {
     return {
       status: 400,
-      message: "验证码无效，请检查后重新输入。"
+      message: t("api.auth.verifyInvalid")
     };
   }
 
@@ -26,6 +27,7 @@ function mapVerifyError(errorMessage: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const { t } = createRequestTranslator(request);
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
     token?: string;
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
   if (!body.email || !body.token) {
     return NextResponse.json(
       {
-        error: "邮箱和验证码不能为空。"
+        error: t("api.auth.verifyEmailAndCodeRequired")
       },
       { status: 400 }
     );
@@ -44,21 +46,21 @@ export async function POST(request: NextRequest) {
   if (!isSupabaseBrowserConfigured()) {
     return NextResponse.json(
       {
-        error: "当前尚未配置 Supabase，无法验证邮箱验证码。"
+        error: t("api.auth.verifySupabaseUnavailable")
       },
       { status: 500 }
     );
   }
 
   const response = NextResponse.json({
-    message: "登录成功。"
+    message: t("api.auth.loginSuccess")
   });
   const supabase = createRouteAuthClient(request, response);
 
   if (!supabase) {
     return NextResponse.json(
       {
-        error: "Supabase Auth 客户端初始化失败。"
+        error: t("api.auth.clientInitFailed")
       },
       { status: 500 }
     );
@@ -71,7 +73,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    const mapped = mapVerifyError(error.message);
+    const mapped = mapVerifyError(error.message, t);
     return NextResponse.json(
       {
         error: mapped.message

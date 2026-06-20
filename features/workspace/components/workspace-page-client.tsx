@@ -6,6 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useDeferredValue, useEffect, useState } from "react";
 import { WorkspacePage } from "@/features/workspace/components/workspace-page";
 import { fetchProjects } from "@/features/workspace/lib/fetch-projects";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 import { queryKeys } from "@/shared/lib/query-keys";
 import type { Project } from "@/shared/types/project";
 
@@ -13,17 +14,11 @@ type WorkspacePageClientProps = {
   initialProjects: Project[];
 };
 
-const projectTypeLabelMap: Record<Project["projectType"], string> = {
-  website: "官网开发",
-  mini_program: "小程序开发",
-  admin_panel: "后台管理系统",
-  custom: "定制项目"
-};
-
 export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const [notice, setNotice] = useState<string | null>(null);
   const [searchValue, setSearchValue] = useState("");
   const deferredSearchValue = useDeferredValue(searchValue);
@@ -40,14 +35,14 @@ export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProp
       return;
     }
 
-    setNotice(saved === "created" ? "项目已创建并保存，已返回工作台。" : "项目已保存，已返回工作台。");
+    setNotice(saved === "created" ? t("workspace.noticeCreated") : t("workspace.noticeSaved"));
 
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.delete("saved");
     const nextUrl = nextParams.toString() ? `${pathname}?${nextParams.toString()}` : pathname;
 
     router.replace(nextUrl as Route);
-  }, [pathname, router, searchParams]);
+  }, [pathname, router, searchParams, t]);
 
   const normalizedSearch = deferredSearchValue.trim().toLowerCase();
   const projects = normalizedSearch
@@ -56,7 +51,7 @@ export function WorkspacePageClient({ initialProjects }: WorkspacePageClientProp
           project.title,
           project.clientName,
           project.clientCompany ?? "",
-          projectTypeLabelMap[project.projectType]
+          project.projectType
         ];
 
         return haystacks.some((value) => value.toLowerCase().includes(normalizedSearch));

@@ -4,23 +4,24 @@ import { createSendCooldownToken, verifySendCooldown } from "@/server/auth/login
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
 import { isSupabaseBrowserConfigured } from "@/server/supabase/keys";
 import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
+import { createRequestTranslator } from "@/shared/i18n/server";
 
 const SEND_COOLDOWN_COOKIE = "quotecraft-login-send-cooldown";
 
-function mapAuthError(errorMessage: string) {
+function mapAuthError(errorMessage: string, t: (path: string, values?: Record<string, string | number>) => string) {
   const normalized = errorMessage.toLowerCase();
 
   if (normalized.includes("email rate limit exceeded")) {
     return {
       status: 429,
-      message: "邮件发送过于频繁，请等待 60 秒后重试，或更换一个邮箱继续。"
+      message: t("api.auth.rateLimitExceeded")
     };
   }
 
   if (normalized.includes("invalid email")) {
     return {
       status: 400,
-      message: "邮箱格式不正确，请检查后重新输入。"
+      message: t("api.auth.invalidEmail")
     };
   }
 
@@ -31,6 +32,7 @@ function mapAuthError(errorMessage: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const { t } = createRequestTranslator(request);
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
     next?: string;
@@ -39,7 +41,7 @@ export async function POST(request: NextRequest) {
   if (!body.email) {
     return NextResponse.json(
       {
-        error: "邮箱不能为空。"
+        error: t("api.auth.loginEmailRequired")
       },
       { status: 400 }
     );
@@ -50,7 +52,9 @@ export async function POST(request: NextRequest) {
   if (!cooldownState.allowed) {
     return NextResponse.json(
       {
-        error: `发送过于频繁，请在 ${cooldownState.retryAfterSeconds} 秒后重试。`,
+        error: t("api.auth.loginCooldown", {
+          seconds: cooldownState.retryAfterSeconds
+        }),
         retryAfterSeconds: cooldownState.retryAfterSeconds
       },
       { status: 429 }
@@ -59,23 +63,25 @@ export async function POST(request: NextRequest) {
 
   if (!isSupabaseBrowserConfigured()) {
     return NextResponse.json({
-      message: "当前尚未配置 Supabase，系统仍处于本地演示模式。补齐环境变量后即可发送真实验证码邮件。"
+      message: t("api.auth.demoMode")
     });
   }
 
-  const ensureUserResult = await ensureAuthUser(body.email);
+  const ensureUserResult = await ensureAuthUser(body.email, t);
 
   if (!ensureUserResult.ok) {
     return NextResponse.json(
       {
-        error: ensureUserResult.error ?? "首次登录账号初始化失败，请稍后重试。"
+        error: ensureUserResult.error ?? t("api.auth.ensureUserFailed")
       },
       { status: 500 }
     );
   }
 
   const response = NextResponse.json({
-    message: `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码完成登录。`,
+    message: t("api.auth.codeSent", {
+      length: EMAIL_OTP_LENGTH
+    }),
     retryAfterSeconds: 60
   });
   const supabase = createRouteAuthClient(request, response);
@@ -83,7 +89,7 @@ export async function POST(request: NextRequest) {
   if (!supabase) {
     return NextResponse.json(
       {
-        error: "Supabase Auth 客户端初始化失败。"
+        error: t("api.auth.clientInitFailed")
       },
       { status: 500 }
     );
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (error) {
-    const mapped = mapAuthError(error.message);
+    const mapped = mapAuthError(error.message, t);
     return NextResponse.json(
       {
         error: mapped.message

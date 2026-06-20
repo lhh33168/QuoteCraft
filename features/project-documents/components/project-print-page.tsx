@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useEffect } from "react";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { PageBackButton } from "@/shared/ui/page-back-button";
@@ -11,19 +12,20 @@ type ProjectPrintPageProps = {
   detail: ProjectDetail;
 };
 
-const projectTypeLabelMap: Record<ProjectType, string> = {
-  website: "官网开发",
-  mini_program: "小程序开发",
-  admin_panel: "后台管理系统",
-  custom: "定制项目"
-};
-
 function renderParagraph(value: string | null | undefined, fallback: string) {
   return value?.trim() ? value : fallback;
 }
 
 export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
+  const { t } = useI18n();
   const { project, quoteItems } = detail;
+
+  const projectTypeLabelMap: Record<ProjectType, string> = {
+    website: t("projectCard.website"),
+    mini_program: t("projectCard.miniProgram"),
+    admin_panel: t("projectCard.adminPanel"),
+    custom: t("projectCard.custom")
+  };
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -39,11 +41,11 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
         <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
           <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 py-3 sm:grid-cols-[48px_minmax(0,1fr)_48px]">
             <div className="shrink-0">
-              <PageBackButton fallbackHref={`/projects/${project.id}` as Route} label="返回编辑页" />
+              <PageBackButton fallbackHref={`/projects/${project.id}` as Route} label={t("print.backToEditor")} />
             </div>
             <div className="min-w-0 text-center">
-              <p className="truncate text-[16px] font-semibold text-ink sm:text-[18px]">PDF 导出预览</p>
-              <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">报价助手</p>
+              <p className="truncate text-[16px] font-semibold text-ink sm:text-[18px]">{t("print.title")}</p>
+              <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">{t("print.eyebrow")}</p>
             </div>
             <div aria-hidden="true" className="h-11 w-11 sm:h-12 sm:w-12" />
           </div>
@@ -54,8 +56,8 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
         <section className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50/92 p-4 text-sm leading-7 text-sky-900 print:hidden sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">导出指引</p>
-              <p className="mt-2 font-semibold text-ink">页面已自动打开系统打印面板，也可以手动再次导出。</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">{t("print.guideEyebrow")}</p>
+              <p className="mt-2 font-semibold text-ink">{t("print.guideTitle")}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -63,13 +65,13 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
                 onClick={() => window.print()}
                 type="button"
               >
-                打印 / 保存为 PDF
+                {t("print.printOrSavePdf")}
               </button>
               <Link
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
                 href={`/projects/${project.id}`}
               >
-                返回编辑页
+                {t("print.backToEditorButton")}
               </Link>
             </div>
           </div>
@@ -78,44 +80,44 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
         <article className="overflow-hidden rounded-[30px] border border-black/5 bg-white shadow-soft print:rounded-none print:border-0 print:shadow-none sm:rounded-[32px]">
           <header className="border-b border-black/8 bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-5 py-7 text-white sm:px-8 sm:py-8">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
-              QuoteCraft Proposal
+              {t("share.proposalEyebrow")}
             </div>
             <h2 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
-              {project.title || "未命名项目"}
+              {project.title || t("share.untitledProject")}
             </h2>
             <p className="mt-4 max-w-3xl text-sm leading-8 text-white/80 sm:text-base">
-              {renderParagraph(project.summary, "这是一份用于客户沟通和报价确认的项目方案。")}
+              {renderParagraph(project.summary, t("share.defaultSummary"))}
             </p>
           </header>
 
           <div className="px-5 py-7 sm:px-8 sm:py-8">
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              <InfoCard label="客户名称" value={project.clientName || "待补充"} />
-              <InfoCard label="客户公司" value={project.clientCompany || "待补充"} />
-              <InfoCard label="项目类型" value={projectTypeLabelMap[project.projectType]} />
-              <InfoCard label="所属行业" value={project.industry || "通用企业服务"} />
+              <InfoCard label={t("share.clientName")} value={project.clientName || t("share.defaultDuration")} />
+              <InfoCard label={t("editorScreen.fieldClientCompany")} value={project.clientCompany || t("share.defaultDuration")} />
+              <InfoCard label={t("share.projectType")} value={projectTypeLabelMap[project.projectType]} />
+              <InfoCard label={t("share.industry")} value={project.industry || t("share.defaultIndustry")} />
             </section>
 
             <section className="mt-8 grid gap-6 border-t border-black/8 pt-6 sm:grid-cols-2">
-              <ContentBlock title="项目背景" content={renderParagraph(project.background, "暂无项目背景说明。")} />
-              <ContentBlock title="项目目标" content={renderParagraph(project.goal, "暂无项目目标说明。")} />
+              <ContentBlock title={t("share.projectBackground")} content={renderParagraph(project.background, t("share.defaultBackground"))} />
+              <ContentBlock title={t("share.projectGoal")} content={renderParagraph(project.goal, t("share.defaultGoal"))} />
             </section>
 
             <section className="mt-8 border-t border-black/8 pt-6">
-              <ContentBlock title="服务范围" content={renderParagraph(project.scope, "暂无服务范围说明。")} />
+              <ContentBlock title={t("share.serviceScope")} content={renderParagraph(project.scope, t("share.defaultScope"))} />
             </section>
 
             <section className="mt-8 border-t border-black/8 pt-6">
               <ContentBlock
-                title="原始需求摘要"
-                content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")}
+                title={t("share.rawRequirementSummary")}
+                content={renderParagraph(project.rawRequirement, t("share.defaultRawRequirement"))}
               />
             </section>
 
             <section className="mt-8 border-t border-black/8 pt-6">
               <div className="flex items-center justify-between gap-4">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">报价明细</h3>
-                <p className="text-xs leading-6 text-muted">共 {quoteItems.length} 个报价项</p>
+                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">{t("share.quoteDetails")}</h3>
+                <p className="text-xs leading-6 text-muted">{quoteItems.length}</p>
               </div>
 
               <div className="mt-4 space-y-4">
@@ -126,15 +128,15 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
                         <div className="flex flex-wrap items-center gap-2">
                           <h4 className="text-base font-semibold text-ink">{item.name}</h4>
                           <span className="rounded-full bg-white px-3 py-1 text-xs text-muted">
-                            {item.quantity} {item.unit || "项"}
+                            {item.quantity} {item.unit || t("share.defaultUnit")}
                           </span>
                         </div>
                         <p className="mt-2 text-sm leading-7 text-muted">
-                          {renderParagraph(item.description, "暂无报价项说明。")}
+                          {renderParagraph(item.description, t("share.defaultItemDescription"))}
                         </p>
                       </div>
                       <div className="shrink-0">
-                        <p className="text-xs uppercase tracking-[0.16em] text-muted">小计</p>
+                        <p className="text-xs uppercase tracking-[0.16em] text-muted">{t("share.subtotal")}</p>
                         <strong className="mt-2 block font-display text-2xl text-pine">
                           {formatMoney(item.subtotal)}
                         </strong>
@@ -146,13 +148,13 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
             </section>
 
             <section className="mt-8 rounded-[24px] bg-gradient-to-r from-pineSoft to-[#f6efe3] p-5 sm:p-6">
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">项目总金额</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">{t("share.totalPrice")}</span>
               <strong className="mt-2 block font-display text-4xl text-pine">{formatMoney(project.totalPrice)}</strong>
               <p className="mt-3 text-sm leading-7 text-muted">
-                交付说明：{renderParagraph(project.deliveryNote, "暂无交付说明。")}
+                {t("share.deliveryNote").replace("{value}", renderParagraph(project.deliveryNote, t("share.defaultDeliveryNote")))}
               </p>
               <p className="mt-2 text-sm leading-7 text-muted">
-                项目备注：{renderParagraph(project.remark, "暂无备注。")}
+                {t("share.remark").replace("{value}", renderParagraph(project.remark, t("share.defaultRemark")))}
               </p>
             </section>
           </div>

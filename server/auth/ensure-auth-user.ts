@@ -10,11 +10,14 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-export async function ensureAuthUser(email: string): Promise<EnsureAuthUserResult> {
+export async function ensureAuthUser(
+  email: string,
+  t?: (path: string, values?: Record<string, string | number>) => string
+): Promise<EnsureAuthUserResult> {
   if (!isSupabaseServerConfigured()) {
     return {
       ok: false,
-      error: "当前未配置 Supabase 服务端 Key，无法为首次登录邮箱创建账号。"
+      error: t?.("api.auth.ensureUserFailed") ?? "Failed to initialize the account for first-time login."
     };
   }
 
@@ -23,7 +26,7 @@ export async function ensureAuthUser(email: string): Promise<EnsureAuthUserResul
   if (!supabase) {
     return {
       ok: false,
-      error: "Supabase 服务端客户端初始化失败。"
+      error: t?.("api.auth.clientInitFailed") ?? "Failed to initialize the Supabase Auth client."
     };
   }
 

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LoginStatus } from "@/features/auth/components/login-status";
 import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
 
 type LoginStep = "request-code" | "verify-code";
@@ -20,9 +21,17 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
+function formatMessage(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
+    template
+  );
+}
+
 export function LoginFormCard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const next = (searchParams.get("next") ?? "/workspace") as Route;
   const callbackError = searchParams.get("error");
   const demoShareHref = "/share/share-project-education-site" as Route;
@@ -101,19 +110,19 @@ export function LoginFormCard() {
     setEmailTouched(true);
 
     if (!emailValid) {
-      setError("请输入正确的邮箱地址。");
+      setError(t("login.statusInvalidEmail"));
       return;
     }
 
     if (cooldownSeconds > 0) {
-      setError(`请等待 ${cooldownSeconds} 秒后再重新发送。`);
+      setError(formatMessage(t("login.statusCooldown"), { seconds: cooldownSeconds }));
       return;
     }
 
     startTransition(async () => {
       setStatus({
         kind: "idle",
-        message: "正在发送验证码..."
+        message: t("login.statusSending")
       });
 
       try {
@@ -137,7 +146,7 @@ export function LoginFormCard() {
 
           setStatus({
             kind: "error",
-            message: data.error ?? "验证码发送失败，请稍后重试。"
+            message: data.error ?? t("login.statusSendFailed")
           });
           return;
         }
@@ -152,12 +161,16 @@ export function LoginFormCard() {
         setOtpTouched(false);
         setStatus({
           kind: "success",
-          message: data.message ?? `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码。`
+          message:
+            data.message ??
+            formatMessage(t("login.statusSent"), {
+              length: EMAIL_OTP_LENGTH
+            })
         });
       } catch {
         setStatus({
           kind: "error",
-          message: "网络请求失败，请检查本地环境后重试。"
+          message: t("login.statusNetworkFailed")
         });
       }
     });
@@ -167,7 +180,7 @@ export function LoginFormCard() {
     startTransition(async () => {
       setStatus({
         kind: "idle",
-        message: "正在校验邮箱验证码..."
+        message: t("login.statusVerifying")
       });
 
       try {
@@ -188,20 +201,20 @@ export function LoginFormCard() {
         if (!response.ok) {
           setStatus({
             kind: "error",
-            message: data.error ?? "验证码校验失败，请稍后重试。"
+            message: data.error ?? t("login.statusVerifyFailed")
           });
           return;
         }
 
         setStatus({
           kind: "success",
-          message: data.message ?? "登录成功，正在进入工作台。"
+          message: data.message ?? t("login.statusLoginSuccess")
         });
         router.push(next);
       } catch {
         setStatus({
           kind: "error",
-          message: "网络请求失败，请检查本地环境后重试。"
+          message: t("login.statusNetworkFailed")
         });
       }
     });
@@ -212,7 +225,11 @@ export function LoginFormCard() {
     setOtpTouched(true);
 
     if (otpCode.length !== EMAIL_OTP_LENGTH) {
-      setError(`请输入完整的 ${EMAIL_OTP_LENGTH} 位验证码。`);
+      setError(
+        formatMessage(t("login.statusFullCode"), {
+          length: EMAIL_OTP_LENGTH
+        })
+      );
       return;
     }
 
@@ -227,8 +244,11 @@ export function LoginFormCard() {
       kind: "idle",
       message:
         cooldownSeconds > 0
-          ? `验证码已发送到 ${lastSentEmail}，请等待 ${cooldownSeconds} 秒后再重新发送。`
-          : "你可以修改邮箱，或重新发送一封新的验证码邮件。"
+          ? formatMessage(lastSentEmail ? t("login.codeSentTo") : t("login.codeSentToCurrent"), {
+              email: lastSentEmail,
+              seconds: cooldownSeconds
+            })
+          : t("login.notReceived")
     });
   }
 
@@ -257,20 +277,22 @@ export function LoginFormCard() {
     verifyFormRef.current?.requestSubmit();
   }, [otpCode, step, isPending]);
 
-  const sendButtonLabel = isPending ? "发送中..." : cooldownSeconds > 0 ? `${cooldownSeconds}s 后可重发` : "发送验证码";
-  const verifyButtonLabel = isPending ? "验证中..." : "验证并登录";
-  const demoButtonLabel = isOpeningDemo ? "正在打开示例..." : "体验示例项目";
+  const sendButtonLabel =
+    cooldownSeconds > 0
+      ? `${cooldownSeconds}s ${t("login.resendAfter")}`
+      : t("login.sendCode");
+  const demoButtonLabel = isOpeningDemo ? t("login.openingDemo") : t("login.openDemo");
   const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
 
   return (
-    <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 shadow-soft sm:p-8">
+    <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 pb-7 shadow-soft sm:p-8 sm:pb-9">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="font-display text-3xl text-ink">邮箱验证码登录</h2>
+          <h2 className="font-display text-3xl text-ink">{t("login.title")}</h2>
         </div>
         <div className="inline-flex items-center gap-3 self-start rounded-full bg-[#f4f7f4] px-3 py-2 ring-1 ring-black/6">
           <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted ring-1 ring-black/6">
-            步骤
+            {t("login.step")}
           </span>
           <span className="text-sm font-semibold text-ink">{step === "request-code" ? "1 / 2" : "2 / 2"}</span>
         </div>
@@ -278,8 +300,8 @@ export function LoginFormCard() {
 
       <div className="mt-6 space-y-2.5">
         <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.16em] text-muted">
-          <span>登录进度</span>
-          <span>{step === "request-code" ? "填写邮箱" : "输入验证码"}</span>
+          <span>{t("login.progress")}</span>
+          <span>{step === "request-code" ? t("login.fillEmail") : t("login.inputCode")}</span>
         </div>
         <div className="h-1.5 overflow-hidden rounded-full bg-[#edf1ee]">
           <div
@@ -292,28 +314,33 @@ export function LoginFormCard() {
       {step === "request-code" ? (
         <form className="mt-7 space-y-5" onSubmit={handleSendCode}>
           <div className="space-y-3">
-            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">邮箱地址</label>
+            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+              {t("login.emailLabel")}
+            </label>
             <div className="rounded-2xl bg-[#f5f7f4] ring-1 ring-black/6 transition duration-200 focus-within:bg-white focus-within:ring-[3px] focus-within:ring-pine/12">
               <input
                 autoComplete="email"
                 className="w-full bg-transparent px-4 py-3 text-[15px] text-ink outline-none placeholder:text-muted/45"
                 onBlur={() => setEmailTouched(true)}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="name@company.com"
+                placeholder={t("login.emailPlaceholder")}
                 type="email"
                 value={email}
               />
             </div>
-            {emailInvalid ? <p className="text-xs leading-6 text-red-600">请输入正确的邮箱格式，例如 `name@company.com`。</p> : null}
+            {emailInvalid ? <p className="text-xs leading-6 text-red-600">{t("login.emailInvalid")}</p> : null}
           </div>
 
           <div className="rounded-2xl bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-900 ring-1 ring-sky-100">
-            发送后请前往邮箱查看验证码，再回到当前页面完成登录。
+            {t("login.sendHint")}
           </div>
 
           {cooldownSeconds > 0 ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700">
-              验证码已发送到 {lastSentEmail || "当前邮箱"}，请等待 {cooldownSeconds} 秒后再重新发送。
+              {formatMessage(lastSentEmail ? t("login.codeSentTo") : t("login.codeSentToCurrent"), {
+                email: lastSentEmail,
+                seconds: cooldownSeconds
+              })}
             </div>
           ) : null}
 
@@ -326,7 +353,11 @@ export function LoginFormCard() {
               type="submit"
             >
               <span className="inline-flex items-center gap-2">
-                <ButtonLoadingContent idleLabel={sendButtonLabel} loading={isPending} loadingLabel="发送中..." />
+                <ButtonLoadingContent
+                  idleLabel={sendButtonLabel}
+                  loading={isPending}
+                  loadingLabel={t("login.sendingCode")}
+                />
               </span>
             </button>
             <Link
@@ -350,15 +381,19 @@ export function LoginFormCard() {
       ) : (
         <form className="mt-7 space-y-5" onSubmit={handleVerifyCode} ref={verifyFormRef}>
           <div className="rounded-2xl bg-[#f6faf7] px-4 py-4 ring-1 ring-emerald-100 sm:px-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">验证码已发送至</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">{t("login.sentToTitle")}</p>
             <p className="mt-2 text-base font-semibold text-ink sm:text-lg">{emailForDisplay}</p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              输入 {EMAIL_OTP_LENGTH} 位数字验证码后会自动尝试登录，也支持直接粘贴完整验证码。
+              {formatMessage(t("login.verifyHint"), {
+                length: EMAIL_OTP_LENGTH
+              })}
             </p>
           </div>
 
           <div className="space-y-3">
-            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">邮箱验证码</label>
+            <label className="block text-xs font-semibold uppercase tracking-[0.16em] text-muted">
+              {t("login.codeLabel")}
+            </label>
             <button
               className="grid w-full grid-cols-4 gap-2 rounded-2xl bg-[#f5f7f4] p-2 ring-1 ring-black/6 sm:grid-cols-8 sm:gap-2.5 sm:p-2.5"
               onClick={() => otpInputRef.current?.focus()}
@@ -390,20 +425,30 @@ export function LoginFormCard() {
               onBlur={() => setOtpTouched(true)}
               onChange={(event) => handleOtpChange(event.target.value)}
               onPaste={handleOtpPaste}
-              placeholder={`输入 ${EMAIL_OTP_LENGTH} 位验证码`}
+              placeholder={formatMessage(t("login.codePlaceholder"), {
+                length: EMAIL_OTP_LENGTH
+              })}
               ref={otpInputRef}
               value={otpCode}
             />
-            {otpInvalid ? <p className="text-xs leading-6 text-red-600">验证码需要为 {EMAIL_OTP_LENGTH} 位数字。</p> : null}
+            {otpInvalid ? (
+              <p className="text-xs leading-6 text-red-600">
+                {formatMessage(t("login.codeInvalid"), {
+                  length: EMAIL_OTP_LENGTH
+                })}
+              </p>
+            ) : null}
           </div>
 
           {cooldownSeconds > 0 ? (
             <div className="rounded-2xl bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted ring-1 ring-black/6">
-              还没收到验证码？请等待 {cooldownSeconds} 秒后再重新发送。
+              {formatMessage(t("login.notReceivedWithCooldown"), {
+                seconds: cooldownSeconds
+              })}
             </div>
           ) : (
             <div className="rounded-2xl bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted ring-1 ring-black/6">
-              还没收到验证码？你可以返回上一步修改邮箱，或重新发送一封新的验证码邮件。
+              {t("login.notReceived")}
             </div>
           )}
 
@@ -416,7 +461,11 @@ export function LoginFormCard() {
               type="submit"
             >
               <span className="inline-flex items-center gap-2">
-                <ButtonLoadingContent idleLabel={verifyButtonLabel} loading={isPending} loadingLabel="验证中..." />
+                <ButtonLoadingContent
+                  idleLabel={t("login.verifyAndLogin")}
+                  loading={isPending}
+                  loadingLabel={t("login.verifying")}
+                />
               </span>
             </button>
             <button
@@ -425,7 +474,7 @@ export function LoginFormCard() {
               onClick={handleBackToRequest}
               type="button"
             >
-              修改邮箱或重发
+              {t("login.editEmailOrResend")}
             </button>
           </div>
         </form>

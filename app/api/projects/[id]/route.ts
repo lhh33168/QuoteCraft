@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { projectService } from "@/server/services/project-service";
+import { createRequestTranslator } from "@/shared/i18n/server";
 import type { ProjectDetail } from "@/shared/types/project";
 
 type RouteProps = {
@@ -8,7 +9,9 @@ type RouteProps = {
   }>;
 };
 
-export async function GET(_: Request, { params }: RouteProps) {
+export async function GET(request: Request, { params }: RouteProps) {
+  const { t } = createRequestTranslator(request);
+
   try {
     const { id } = await params;
     const detail = await projectService.getProjectDetail(id);
@@ -17,7 +20,7 @@ export async function GET(_: Request, { params }: RouteProps) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "读取项目详情失败。"
+        error: error instanceof Error ? error.message : t("api.projects.detailFailed")
       },
       { status: 500 }
     );
@@ -25,6 +28,8 @@ export async function GET(_: Request, { params }: RouteProps) {
 }
 
 export async function PUT(request: Request, { params }: RouteProps) {
+  const { t } = createRequestTranslator(request);
+
   try {
     const { id } = await params;
     const payload = (await request.json()) as ProjectDetail;
@@ -34,14 +39,16 @@ export async function PUT(request: Request, { params }: RouteProps) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "更新项目失败。"
+        error: error instanceof Error ? error.message : t("api.projects.updateFailed")
       },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(_: Request, { params }: RouteProps) {
+export async function DELETE(request: Request, { params }: RouteProps) {
+  const { t } = createRequestTranslator(request);
+
   try {
     const { id } = await params;
     const result = await projectService.deleteProject(id);
@@ -50,7 +57,7 @@ export async function DELETE(_: Request, { params }: RouteProps) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "删除项目失败。"
+        error: error instanceof Error ? error.message : t("api.projects.deleteFailed")
       },
       { status: 500 }
     );

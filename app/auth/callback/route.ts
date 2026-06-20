@@ -2,6 +2,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
 import { isSupabaseBrowserConfigured } from "@/server/supabase/keys";
+import { createRequestTranslator } from "@/shared/i18n/server";
 
 function normalizeNextPath(value?: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -11,25 +12,26 @@ function normalizeNextPath(value?: string) {
   return value;
 }
 
-function mapCallbackError(errorMessage: string) {
+function mapCallbackError(errorMessage: string, t: (path: string, values?: Record<string, string | number>) => string) {
   const normalized = errorMessage.toLowerCase();
 
   if (normalized.includes("expired")) {
-    return "邮件中的兜底验证信息已过期，请返回登录页重新获取验证码。";
+    return t("api.auth.callbackExpired");
   }
 
   if (normalized.includes("invalid")) {
-    return "邮件中的兜底验证信息无效，请返回登录页重新获取验证码。";
+    return t("api.auth.callbackInvalid");
   }
 
   if (normalized.includes("otp")) {
-    return "邮箱兜底验证失败，请回到登录页重新发送新的验证码邮件。";
+    return t("api.auth.callbackOtpFailed");
   }
 
-  return "邮件兜底验证失败，请返回登录页重新尝试验证码登录。";
+  return t("api.auth.callbackGeneric");
 }
 
 export async function GET(request: NextRequest) {
+  const { t } = createRequestTranslator(request);
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
   if (errorDescription) {
     const loginUrl = new URL("/login", requestUrl.origin);
     loginUrl.searchParams.set("next", next);
-    loginUrl.searchParams.set("error", mapCallbackError(errorDescription));
+    loginUrl.searchParams.set("error", mapCallbackError(errorDescription, t));
     return NextResponse.redirect(loginUrl);
   }
 
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       const loginUrl = new URL("/login", requestUrl.origin);
       loginUrl.searchParams.set("next", next);
-      loginUrl.searchParams.set("error", mapCallbackError(error.message));
+      loginUrl.searchParams.set("error", mapCallbackError(error.message, t));
       return NextResponse.redirect(loginUrl);
     }
   } else if (tokenHash && type) {
@@ -74,7 +76,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       const loginUrl = new URL("/login", requestUrl.origin);
       loginUrl.searchParams.set("next", next);
-      loginUrl.searchParams.set("error", mapCallbackError(error.message));
+      loginUrl.searchParams.set("error", mapCallbackError(error.message, t));
       return NextResponse.redirect(loginUrl);
     }
   }

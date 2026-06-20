@@ -3,6 +3,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { useI18n } from "@/shared/i18n/i18n-provider";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 
@@ -13,13 +14,14 @@ type ProjectListActionsProps = {
 export function ProjectListActions({ projectId }: ProjectListActionsProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { t } = useI18n();
   const [message, setMessage] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function handleDuplicate() {
     startTransition(async () => {
-      setMessage("正在复制项目...");
+      setMessage(t("projectActions.duplicating"));
 
       try {
         const response = await fetch(`/api/projects/${projectId}/duplicate`, {
@@ -32,17 +34,17 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
         };
 
         if (!response.ok || !data.project?.id) {
-          setMessage("复制失败，请稍后重试。");
+          setMessage(t("projectActions.duplicateFailed"));
           return;
         }
 
-        setMessage("复制成功，正在跳转...");
+        setMessage(t("projectActions.duplicateSuccess"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"]
         });
         router.push(`/projects/${data.project.id}`);
       } catch {
-        setMessage("复制请求失败。");
+        setMessage(t("projectActions.duplicateRequestFailed"));
       }
     });
   }
@@ -53,7 +55,7 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
 
   function confirmDelete() {
     startTransition(async () => {
-      setMessage("正在删除项目...");
+      setMessage(t("projectActions.deleting"));
 
       try {
         const response = await fetch(`/api/projects/${projectId}`, {
@@ -61,17 +63,17 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
         });
 
         if (!response.ok) {
-          setMessage("删除失败，请稍后重试。");
+          setMessage(t("projectActions.deleteFailed"));
           return;
         }
 
         setDeleteOpen(false);
-        setMessage("项目已删除。");
+        setMessage(t("projectActions.deleteSuccess"));
         await queryClient.invalidateQueries({
           queryKey: ["projects"]
         });
       } catch {
-        setMessage("删除请求失败。");
+        setMessage(t("projectActions.deleteRequestFailed"));
       }
     });
   }
@@ -88,9 +90,9 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
           >
             <span className="inline-flex items-center gap-2">
               <ButtonLoadingContent
-                idleLabel="复制"
+                idleLabel={t("projectActions.duplicate")}
                 loading={isPending}
-                loadingLabel="处理中..."
+                loadingLabel={t("common.processing")}
                 spinnerTone="dark"
               />
             </span>
@@ -103,9 +105,9 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
           >
             <span className="inline-flex items-center gap-2">
               <ButtonLoadingContent
-                idleLabel="删除"
+                idleLabel={t("projectActions.delete")}
                 loading={isPending}
-                loadingLabel="处理中..."
+                loadingLabel={t("common.processing")}
                 spinnerTone="dark"
               />
             </span>
@@ -115,15 +117,15 @@ export function ProjectListActions({ projectId }: ProjectListActionsProps) {
       </div>
 
       <ConfirmDialog
-        cancelLabel="先不删"
-        confirmLabel="确认删除"
+        cancelLabel={t("projectActions.cancelDeleteAction")}
+        confirmLabel={t("projectActions.confirmDeleteAction")}
         confirmTone="danger"
-        description="删除后该项目将从工作台移除，当前页面无法直接恢复。"
+        description={t("projectActions.confirmDeleteDescription")}
         onCancel={() => setDeleteOpen(false)}
         onConfirm={confirmDelete}
         open={deleteOpen}
         pending={isPending}
-        title="确认删除这个项目？"
+        title={t("projectActions.confirmDeleteTitle")}
       />
     </>
   );
