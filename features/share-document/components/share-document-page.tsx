@@ -409,8 +409,8 @@ function MobileBottomBar({
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 lg:hidden print:hidden">
-      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
-        <div className="app-safe-bottom-comfortable app-bottom-bar app-bottom-bar-compact app-bottom-bar-panel px-3 pb-0 pt-3">
+      <div className="app-safe-bottom-comfortable app-bottom-bar app-bottom-bar-compact w-full border-x-0 px-3 pb-0 pt-3 sm:px-6">
+        <div className="pb-0">
           <p className="mb-2 text-[11px] leading-5 text-muted/90">{note}</p>
           <div className="grid grid-cols-2 gap-2">
             {secondaryAction}
