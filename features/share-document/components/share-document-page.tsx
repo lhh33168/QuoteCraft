@@ -183,7 +183,7 @@ export function ShareDocumentPage({
         </div>
       )}
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-28 pt-6 sm:px-6 sm:pb-32 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
         <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa] p-6 shadow-soft sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
@@ -204,7 +204,9 @@ export function ShareDocumentPage({
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
               QuoteCraft Proposal
             </div>
-            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">{project.title || "未命名项目"}</h1>
+            <h1 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
+              {project.title || "未命名项目"}
+            </h1>
             <p className="mt-4 max-w-3xl text-sm leading-8 text-white/80 sm:text-base">
               {renderParagraph(project.summary, "这是一份用于客户查看和沟通的项目方案。")}
             </p>
@@ -227,7 +229,10 @@ export function ShareDocumentPage({
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
-            <ContentBlock title="原始需求摘要" content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")} />
+            <ContentBlock
+              title="原始需求摘要"
+              content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")}
+            />
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
@@ -264,40 +269,48 @@ export function ShareDocumentPage({
 
           <section className="mt-8 rounded-[24px] bg-gradient-to-r from-pineSoft to-[#f6efe3] p-5 sm:p-6">
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">项目总金额</span>
-            <strong className="mt-2 block font-display text-4xl text-pine">{formatMoney(project.totalPrice)}</strong>
+            <strong className="mt-2 block font-display text-4xl text-pine">
+              {formatMoney(project.totalPrice)}
+            </strong>
             <p className="mt-3 text-sm leading-7 text-muted">
               交付说明：{renderParagraph(project.deliveryNote, "暂无交付说明。")}
             </p>
-            <p className="mt-2 text-sm leading-7 text-muted">项目备注：{renderParagraph(project.remark, "暂无备注。")}</p>
+            <p className="mt-2 text-sm leading-7 text-muted">
+              项目备注：{renderParagraph(project.remark, "暂无备注。")}
+            </p>
           </section>
         </section>
 
         {isPrintMode ? (
-          <div className="app-safe-bottom sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
-            <p className="mb-3 text-xs leading-6 text-muted">导出 PDF 后，文件保存位置由系统打印面板决定。</p>
-            <div className="grid grid-cols-2 gap-3">
-              <Link
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
-                href={sharePageHref}
-              >
-                返回方案页
-              </Link>
+          <MobileBottomBar
+            note="导出 PDF 后，文件保存位置由系统打印面板决定。"
+            primaryAction={
               <button
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/60"
+                className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-[15px] font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/60 sm:min-h-11"
                 disabled={exportState === "processing"}
                 onClick={handlePrintDownload}
                 type="button"
               >
                 {exportState === "processing" ? "导出中..." : "导出 PDF"}
               </button>
-            </div>
-          </div>
+            }
+            secondaryAction={
+              <Link
+                className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[15px] font-semibold text-ink sm:min-h-11"
+                href={sharePageHref}
+              >
+                返回方案页
+              </Link>
+            }
+          />
         ) : (
           <>
             <aside className="w-full shrink-0 lg:sticky lg:top-8 lg:w-[320px] print:hidden">
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-soft sm:p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
-                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">把这份方案直接发给客户，或导出留档</h2>
+                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">
+                  把这份方案直接发给客户，或导出留档
+                </h2>
                 <p className="mt-4 text-sm leading-7 text-muted">
                   分享页适合快速查看，导出 PDF 更适合留档、发邮件，或发给团队内部继续跟进。
                 </p>
@@ -368,27 +381,53 @@ export function ShareDocumentPage({
               </section>
             </aside>
 
-            <div className="app-safe-bottom sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
-              <p className="mb-3 text-xs leading-6 text-muted">导出后会打开系统打印面板，请选择“保存为 PDF”。</p>
-              <div className="grid grid-cols-2 gap-3">
+            <MobileBottomBar
+              note="导出后会打开系统打印面板，请选择“保存为 PDF”。"
+              primaryAction={
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
-                  href={printPageHref}
-                >
-                  预览 PDF 版
-                </Link>
-                <Link
-                  className="inline-flex min-h-12 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold text-white"
+                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-[15px] font-semibold text-white sm:min-h-11"
                   href={autoPrintHref}
                 >
                   导出 PDF
                 </Link>
-              </div>
-            </div>
+              }
+              secondaryAction={
+                <Link
+                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[15px] font-semibold text-ink sm:min-h-11"
+                  href={printPageHref}
+                >
+                  预览 PDF 版
+                </Link>
+              }
+            />
           </>
         )}
       </div>
     </main>
+  );
+}
+
+function MobileBottomBar({
+  note,
+  secondaryAction,
+  primaryAction
+}: {
+  note: string;
+  secondaryAction: React.ReactNode;
+  primaryAction: React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 lg:hidden print:hidden">
+      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+        <div className="app-safe-bottom-comfortable app-bottom-bar app-bottom-bar-compact app-bottom-bar-panel px-3 pb-0 pt-3">
+          <p className="mb-2 text-[11px] leading-5 text-muted/90">{note}</p>
+          <div className="grid grid-cols-2 gap-2">
+            {secondaryAction}
+            {primaryAction}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
