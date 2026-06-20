@@ -41,6 +41,7 @@ export function LoginFormCard() {
   const [otpCode, setOtpCode] = useState("");
   const [step, setStep] = useState<LoginStep>("request-code");
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [verifyCooldownSeconds, setVerifyCooldownSeconds] = useState(0);
   const [lastSentEmail, setLastSentEmail] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [otpTouched, setOtpTouched] = useState(false);
@@ -73,6 +74,10 @@ export function LoginFormCard() {
     setCooldownSeconds(seconds);
   }
 
+  function beginVerifyCooldown(seconds: number) {
+    setVerifyCooldownSeconds(seconds);
+  }
+
   useEffect(() => {
     if (cooldownSeconds <= 0) {
       return;
@@ -91,6 +96,25 @@ export function LoginFormCard() {
 
     return () => window.clearInterval(timer);
   }, [cooldownSeconds]);
+
+  useEffect(() => {
+    if (verifyCooldownSeconds <= 0) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setVerifyCooldownSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [verifyCooldownSeconds]);
 
   useEffect(() => {
     if (step !== "verify-code") {
@@ -199,6 +223,10 @@ export function LoginFormCard() {
         const data = (await response.json()) as LoginApiPayload;
 
         if (!response.ok) {
+          if (typeof data.retryAfterSeconds === "number" && data.retryAfterSeconds > 0) {
+            beginVerifyCooldown(data.retryAfterSeconds);
+          }
+
           setStatus({
             kind: "error",
             message: data.error ?? t("login.statusVerifyFailed")
@@ -224,6 +252,15 @@ export function LoginFormCard() {
     event.preventDefault();
     setOtpTouched(true);
 
+    if (verifyCooldownSeconds > 0) {
+      setError(
+        formatMessage(t("login.verifyRetryAfter"), {
+          seconds: verifyCooldownSeconds
+        })
+      );
+      return;
+    }
+
     if (otpCode.length !== EMAIL_OTP_LENGTH) {
       setError(
         formatMessage(t("login.statusFullCode"), {
@@ -240,6 +277,7 @@ export function LoginFormCard() {
     setStep("request-code");
     setOtpCode("");
     setOtpTouched(false);
+    setVerifyCooldownSeconds(0);
     setStatus({
       kind: "idle",
       message:
@@ -270,19 +308,24 @@ export function LoginFormCard() {
   }
 
   useEffect(() => {
-    if (step !== "verify-code" || otpCode.length !== EMAIL_OTP_LENGTH || isPending) {
+    if (step !== "verify-code" || otpCode.length !== EMAIL_OTP_LENGTH || isPending || verifyCooldownSeconds > 0) {
       return;
     }
 
     verifyFormRef.current?.requestSubmit();
-  }, [otpCode, step]);
+  }, [otpCode, step, verifyCooldownSeconds]);
 
   const sendButtonLabel =
     cooldownSeconds > 0
       ? `${cooldownSeconds}s ${t("login.resendAfter")}`
       : t("login.sendCode");
+  const verifyButtonLabel =
+    verifyCooldownSeconds > 0
+      ? formatMessage(t("login.verifyCooldown"), { seconds: verifyCooldownSeconds })
+      : t("login.verifyAndLogin");
   const demoButtonLabel = isOpeningDemo ? t("login.openingDemo") : t("login.openDemo");
   const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
+  const verifyDisabled = isPending || verifyCooldownSeconds > 0 || otpCode.length !== EMAIL_OTP_LENGTH;
 
   return (
     <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 pb-7 shadow-soft sm:p-8 sm:pb-9">
@@ -452,17 +495,25 @@ export function LoginFormCard() {
             </div>
           )}
 
+          {verifyCooldownSeconds > 0 ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700">
+              {formatMessage(t("login.verifyRetryAfter"), {
+                seconds: verifyCooldownSeconds
+              })}
+            </div>
+          ) : null}
+
           <LoginStatus kind={status.kind} message={status.message} />
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-pine px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(36,93,83,0.18)] transition duration-200 disabled:cursor-not-allowed disabled:bg-pine/50 disabled:shadow-none"
-              disabled={isPending || otpCode.length !== EMAIL_OTP_LENGTH}
+              disabled={verifyDisabled}
               type="submit"
             >
               <span className="inline-flex items-center gap-2">
                 <ButtonLoadingContent
-                  idleLabel={t("login.verifyAndLogin")}
+                  idleLabel={verifyButtonLabel}
                   loading={isPending}
                   loadingLabel={t("login.verifying")}
                 />

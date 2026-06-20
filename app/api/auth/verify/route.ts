@@ -9,7 +9,8 @@ function mapVerifyError(errorMessage: string, t: (path: string, values?: Record<
   if (normalized.includes("rate limit")) {
     return {
       status: 429,
-      message: t("api.auth.rateLimitExceeded")
+      message: t("api.auth.rateLimitExceeded"),
+      retryAfterSeconds: 60
     };
   }
 
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
     const mapped = mapVerifyError(error.message, t);
     return NextResponse.json(
       {
-        error: mapped.message
+        error: mapped.message,
+        retryAfterSeconds: "retryAfterSeconds" in mapped ? mapped.retryAfterSeconds : undefined
       },
       { status: mapped.status }
     );

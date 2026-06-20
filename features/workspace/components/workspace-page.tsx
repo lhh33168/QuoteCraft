@@ -18,6 +18,7 @@ import { StatusBadge } from "@/shared/ui/status-badge";
 
 type WorkspacePageProps = {
   billingSnapshot?: BillingSnapshot | null;
+  billingError?: string | null;
   projects: Project[];
   notice?: string | null;
   searchValue: string;
@@ -26,7 +27,14 @@ type WorkspacePageProps = {
 
 type WorkspaceActionState = "idle" | "create" | "template";
 
-export function WorkspacePage({ billingSnapshot, projects, notice, searchValue, onSearchChange }: WorkspacePageProps) {
+export function WorkspacePage({
+  billingSnapshot,
+  billingError,
+  projects,
+  notice,
+  searchValue,
+  onSearchChange
+}: WorkspacePageProps) {
   const router = useRouter();
   const { t } = useI18n();
   const hasProjects = projects.length > 0;
@@ -36,7 +44,8 @@ export function WorkspacePage({ billingSnapshot, projects, notice, searchValue, 
   const templateHref = "/projects/new?template=education-site" as Route;
   const projectLimitReached =
     billingSnapshot?.usage.projectLimit !== null &&
-    billingSnapshot &&
+    billingSnapshot !== null &&
+    billingSnapshot !== undefined &&
     billingSnapshot.usage.projectCount >= billingSnapshot.usage.projectLimit;
 
   useEffect(() => {
@@ -107,7 +116,14 @@ export function WorkspacePage({ billingSnapshot, projects, notice, searchValue, 
             </div>
           ) : null}
 
+          {billingError ? (
+            <div className="mt-4 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+              {t("workspace.billingLoadFailed")}
+            </div>
+          ) : null}
+
           {billingSnapshot ? <WorkspaceBillingStatusCard billingSnapshot={billingSnapshot} /> : null}
+
           {projectLimitReached ? (
             <div className="mt-4">
               <BillingLimitBanner
@@ -361,7 +377,9 @@ function ProjectCard({ project }: { project: Project }) {
     };
 
     if (!response.ok || !data.shareUrl) {
-      throw new Error(data.code === "SHARE_DISABLED" ? t("projectCard.shareDisabled") : (data.error ?? t("projectCard.shareLinkGenerateFailed")));
+      throw new Error(
+        data.code === "SHARE_DISABLED" ? t("projectCard.shareDisabled") : (data.error ?? t("projectCard.shareLinkGenerateFailed"))
+      );
     }
 
     return new URL(data.shareUrl, window.location.origin).toString();
@@ -398,9 +416,7 @@ function ProjectCard({ project }: { project: Project }) {
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-ink">{project.title}</h3>
-          <p className="mt-2 text-sm text-muted">
-            {project.clientName} · {formatUpdatedAt(project.updatedAt, t("workspace.justUpdated"))}
-          </p>
+          <p className="mt-2 text-sm text-muted">{`${project.clientName} · ${formatUpdatedAt(project.updatedAt, t("workspace.justUpdated"))}`}</p>
         </div>
 
         <StatusBadge tone={project.status}>

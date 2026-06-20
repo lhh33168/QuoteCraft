@@ -15,9 +15,14 @@ import type { Project } from "@/shared/types/project";
 type WorkspacePageClientProps = {
   initialProjects: Project[];
   initialBillingSnapshot?: BillingSnapshot | null;
+  initialBillingError?: string | null;
 };
 
-export function WorkspacePageClient({ initialProjects, initialBillingSnapshot }: WorkspacePageClientProps) {
+export function WorkspacePageClient({
+  initialProjects,
+  initialBillingSnapshot,
+  initialBillingError
+}: WorkspacePageClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -30,11 +35,12 @@ export function WorkspacePageClient({ initialProjects, initialBillingSnapshot }:
     queryFn: fetchProjects,
     initialData: initialProjects
   });
-  const { data: billingSnapshot } = useQuery({
+  const { data: billingSnapshot, error: billingError } = useQuery({
     queryKey: queryKeys.billing,
     queryFn: fetchBillingSnapshot,
     initialData: initialBillingSnapshot ?? undefined,
-    staleTime: 30_000
+    staleTime: 30_000,
+    retry: false
   });
 
   useEffect(() => {
@@ -69,6 +75,7 @@ export function WorkspacePageClient({ initialProjects, initialBillingSnapshot }:
 
   return (
     <WorkspacePage
+      billingError={billingError instanceof Error ? billingError.message : initialBillingError ?? null}
       billingSnapshot={billingSnapshot ?? null}
       notice={notice}
       onSearchChange={setSearchValue}

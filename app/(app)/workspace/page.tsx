@@ -6,15 +6,30 @@ import { HydrationProvider } from "@/shared/providers/hydration-provider";
 import { queryKeys } from "@/shared/lib/query-keys";
 
 export default async function WorkspaceRoute() {
-  const [projects, billingSnapshot] = await Promise.all([projectService.listProjects(), billingService.getSnapshot()]);
+  const projects = await projectService.listProjects();
   const queryClient = new QueryClient();
+  let billingSnapshot = null;
+  let initialBillingError: string | null = null;
+
+  try {
+    billingSnapshot = await billingService.getSnapshot();
+  } catch (error) {
+    initialBillingError = error instanceof Error ? error.message : "Billing snapshot failed to load.";
+  }
 
   queryClient.setQueryData(queryKeys.projects, projects);
-  queryClient.setQueryData(queryKeys.billing, billingSnapshot);
+
+  if (billingSnapshot) {
+    queryClient.setQueryData(queryKeys.billing, billingSnapshot);
+  }
 
   return (
     <HydrationProvider state={dehydrate(queryClient)}>
-      <WorkspacePageClient initialBillingSnapshot={billingSnapshot} initialProjects={projects} />
+      <WorkspacePageClient
+        initialBillingError={initialBillingError}
+        initialBillingSnapshot={billingSnapshot}
+        initialProjects={projects}
+      />
     </HydrationProvider>
   );
 }

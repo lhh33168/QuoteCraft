@@ -43,7 +43,8 @@ const en = {
     noticeSaved: "Project saved. Back in workspace.",
     projectLimitTitle: "Free project quota reached",
     projectLimitDescription: "Your current project count has reached the Free plan limit. Upgrade first, then create or duplicate more projects.",
-    goToSubscription: "Go to Subscription"
+    goToSubscription: "Go to Subscription",
+    billingLoadFailed: "Billing information failed to load, but your project list is still available."
   },
   projectCard: {
     website: "Website",
@@ -314,7 +315,9 @@ const en = {
     statusLoginSuccess: "Login successful. Entering workspace...",
     statusInvalidEmail: "Please enter a valid email address.",
     statusCooldown: "Please wait {seconds} seconds before sending again.",
-    statusFullCode: "Please enter the full {length}-digit verification code."
+    statusFullCode: "Please enter the full {length}-digit verification code.",
+    verifyCooldown: "Retry in {seconds}s",
+    verifyRetryAfter: "Too many verification attempts. Please wait {seconds} seconds before trying again."
   },
   editor: {
     createEyebrow: "New Project",
