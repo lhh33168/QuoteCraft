@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureAuthUser } from "@/server/auth/ensure-auth-user";
 import { verifyLoginCaptcha } from "@/server/auth/login-captcha";
 import { createSendCooldownToken, verifySendCooldown } from "@/server/auth/login-send-rate-limit";
 import { createRouteAuthClient } from "@/server/supabase/route-auth";
@@ -28,14 +29,6 @@ function mapAuthError(errorMessage: string) {
     status: 400,
     message: errorMessage
   };
-}
-
-function normalizeNextPath(value?: string) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/workspace";
-  }
-
-  return value;
 }
 
 export async function POST(request: NextRequest) {
@@ -84,12 +77,19 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const nextPath = normalizeNextPath(body.next);
-  const emailRedirectUrl = new URL("/auth/callback", request.nextUrl.origin);
-  emailRedirectUrl.searchParams.set("next", nextPath);
+  const ensureUserResult = await ensureAuthUser(body.email);
+
+  if (!ensureUserResult.ok) {
+    return NextResponse.json(
+      {
+        error: ensureUserResult.error ?? "首次登录账号初始化失败，请稍后重试。"
+      },
+      { status: 500 }
+    );
+  }
 
   const response = NextResponse.json({
-    message: `登录邮件已发送，请先查看邮箱中的 ${EMAIL_OTP_LENGTH} 位验证码；如果收到的是确认链接，也可以直接点击邮件按钮完成登录。`,
+    message: `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码完成登录。`,
     retryAfterSeconds: 60
   });
   const supabase = createRouteAuthClient(request, response);
@@ -106,8 +106,7 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.auth.signInWithOtp({
     email: body.email,
     options: {
-      shouldCreateUser: true,
-      emailRedirectTo: emailRedirectUrl.toString()
+      shouldCreateUser: false
     }
   });
 
