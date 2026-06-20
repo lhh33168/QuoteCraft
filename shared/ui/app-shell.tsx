@@ -10,6 +10,7 @@ type AppShellProps = {
   backHref?: Route;
   backLabel?: string;
   showBackButton?: boolean;
+  mobileBottomBarSpacing?: "default" | "compact" | "comfortable";
 };
 
 export function AppShell({
@@ -20,7 +21,8 @@ export function AppShell({
   eyebrow = "报价助手",
   backHref = "/" as Route,
   backLabel = "返回上一页",
-  showBackButton = true
+  showBackButton = true,
+  mobileBottomBarSpacing = "default"
 }: AppShellProps) {
   return (
     <main className="app-safe-bottom relative mx-auto min-h-screen w-full max-w-7xl pb-2 sm:px-5 sm:py-5 lg:px-8">
@@ -63,7 +65,18 @@ export function AppShell({
           ) : null}
         </header>
 
-        <div className="px-3 pb-3 pt-3 sm:px-6 sm:pb-6 sm:pt-5">{children}</div>
+        <div
+          className={[
+            "px-3 pt-3 sm:px-6 sm:pt-5",
+            mobileBottomBarSpacing === "comfortable"
+              ? "pb-32 sm:pb-36 lg:pb-6"
+              : mobileBottomBarSpacing === "compact"
+                ? "pb-20 sm:pb-24 lg:pb-6"
+                : "pb-3 sm:pb-6"
+          ].join(" ")}
+        >
+          {children}
+        </div>
       </section>
     </main>
   );

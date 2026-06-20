@@ -59,6 +59,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
       eyebrow="项目工作台"
       title="项目工作台"
       description="优先展示待推进的方案、项目列表和快捷动作，让整个报价推进过程更顺手。"
+      mobileBottomBarSpacing={hasProjects ? "comfortable" : "compact"}
       actions={
         <>
           <Link
@@ -366,7 +367,7 @@ function ProjectCard({ project }: { project: Project }) {
 
 function EmptyState({ isSearching }: { isSearching: boolean }) {
   return (
-    <div className="rounded-[26px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(250,248,242,0.48))] px-5 py-9 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:rounded-[28px] sm:px-6 sm:py-10">
+    <div className="rounded-[26px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(250,248,242,0.48))] px-5 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:rounded-[28px] sm:px-6 sm:py-10">
       <h3 className="text-lg font-semibold text-ink">{isSearching ? "没有找到匹配项目" : "还没有项目"}</h3>
       <p className="mx-auto mt-3 max-w-[26rem] text-sm leading-7 text-muted">
         {isSearching
