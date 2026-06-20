@@ -32,14 +32,14 @@ export function PageBackButton({
   return (
     <button
       aria-label={label}
-      className="group inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-[18px] border border-[#d9e3dc] bg-white/96 px-3 text-sm font-semibold text-ink shadow-[0_10px_24px_rgba(19,33,29,0.06)] transition duration-200 hover:-translate-y-[1px] hover:border-pine/18 hover:bg-[#fcfdfb] hover:text-pine focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine/14 active:translate-y-0 sm:h-10 sm:min-w-10"
+      className="group inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-[17px] border border-[#dbe4de] bg-[linear-gradient(180deg,#ffffff_0%,#f8fbf8_100%)] px-3 text-sm font-semibold text-ink shadow-[0_8px_20px_rgba(19,33,29,0.05)] transition duration-200 hover:-translate-y-[1px] hover:border-pine/20 hover:text-pine focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine/14 active:translate-y-0 sm:h-10 sm:min-w-10"
       onClick={handleBack}
       type="button"
     >
       <span className="flex h-5 w-5 items-center justify-center text-ink transition group-hover:text-pine">
         <svg
           aria-hidden="true"
-          className="h-4 w-4 shrink-0"
+          className="h-[17px] w-[17px] shrink-0"
           fill="none"
           viewBox="0 0 16 16"
           xmlns="http://www.w3.org/2000/svg"
@@ -49,7 +49,7 @@ export function PageBackButton({
             stroke="currentColor"
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="1.7"
+            strokeWidth="1.75"
           />
         </svg>
       </span>
