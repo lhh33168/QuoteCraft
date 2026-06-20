@@ -20,15 +20,16 @@ export async function requireUser(): Promise<SessionUser> {
     throw new Error("Supabase auth client is unavailable.");
   }
 
-  const claimsResult = await supabase.auth.getClaims();
-  const claims = claimsResult.data?.claims;
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
-  if (!claims?.sub) {
+  if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
 
   return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : ""
+    id: session.user.id,
+    email: session.user.email ?? ""
   };
 }

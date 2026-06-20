@@ -27,15 +27,16 @@ export async function getOptionalUser(): Promise<OptionalSessionUser> {
     return null;
   }
 
-  const claimsResult = await supabase.auth.getClaims();
-  const claims = claimsResult.data?.claims;
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
-  if (!claims?.sub) {
+  if (!session?.user?.id) {
     return null;
   }
 
   return {
-    id: claims.sub,
-    email: typeof claims.email === "string" ? claims.email : ""
+    id: session.user.id,
+    email: session.user.email ?? ""
   };
 }

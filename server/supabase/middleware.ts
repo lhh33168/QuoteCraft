@@ -45,11 +45,13 @@ export async function updateSession(request: NextRequest) {
     }
   });
 
-  const { data } = await supabase.auth.getClaims();
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
 
   return {
     response,
-    authenticated: Boolean(data?.claims?.sub),
+    authenticated: Boolean(session?.user?.id),
     skipped: false
   };
 }
