@@ -32,25 +32,27 @@ export function PageBackButton({
   return (
     <button
       aria-label={label}
-      className="inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-black/10 bg-white/88 px-4 text-sm font-semibold text-ink shadow-[0_10px_30px_rgba(19,33,29,0.08)] backdrop-blur transition hover:border-pine/30 hover:text-pine"
+      className="group inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-full border border-[#d8e3db] bg-white/96 px-3.5 text-sm font-semibold text-ink shadow-[0_12px_30px_rgba(19,33,29,0.08)] transition duration-200 hover:-translate-y-0.5 hover:border-pine/30 hover:bg-white hover:text-pine"
       onClick={handleBack}
       type="button"
     >
-      <svg
-        aria-hidden="true"
-        className="h-4 w-4 shrink-0"
-        fill="none"
-        viewBox="0 0 16 16"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M9.75 3.5L5.25 8L9.75 12.5"
-          stroke="currentColor"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.6"
-        />
-      </svg>
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#f4f7f1] text-ink transition group-hover:bg-pine/12 group-hover:text-pine">
+        <svg
+          aria-hidden="true"
+          className="h-4 w-4 shrink-0"
+          fill="none"
+          viewBox="0 0 16 16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9.75 3.5L5.25 8L9.75 12.5"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.7"
+          />
+        </svg>
+      </span>
       <span className="hidden sm:inline">{label}</span>
     </button>
   );

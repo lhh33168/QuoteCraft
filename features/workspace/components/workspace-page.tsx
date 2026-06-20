@@ -28,6 +28,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
 
   return (
     <AppShell
+      showBackButton={false}
       backHref="/"
       backLabel="返回上一页"
       eyebrow="项目工作台"
