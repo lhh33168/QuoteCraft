@@ -32,7 +32,7 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#f5f1e8] print:bg-white">
+    <main className="app-safe-top app-safe-bottom min-h-screen bg-[#f5f1e8] print:bg-white">
       <div className="mx-auto max-w-5xl px-4 py-6 print:max-w-none print:px-0 print:py-0">
         <section className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-black/5 bg-white/90 px-5 py-4 shadow-soft print:hidden">
           <div>

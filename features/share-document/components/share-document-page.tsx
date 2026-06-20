@@ -109,7 +109,7 @@ export function ShareDocumentPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
       {isPrintMode ? (
-        <div className="sticky top-0 z-30 border-b border-black/6 bg-white/92 backdrop-blur-xl print:hidden">
+        <div className="app-safe-top sticky top-0 z-30 border-b border-black/6 bg-[#f7faf7] shadow-[0_10px_24px_rgba(19,33,29,0.05)] print:hidden">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
@@ -163,7 +163,7 @@ export function ShareDocumentPage({
           </div>
         </div>
       ) : (
-        <div className="sticky top-0 z-20 border-b border-black/6 bg-white/82 backdrop-blur-xl print:hidden">
+        <div className="app-safe-top sticky top-0 z-20 border-b border-black/6 bg-[#f7faf7] shadow-[0_10px_24px_rgba(19,33,29,0.05)] print:hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
             <PageBackButton
               fallbackHref={isLoggedIn ? "/workspace" : "/login"}
@@ -184,7 +184,7 @@ export function ShareDocumentPage({
       )}
 
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
-        <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa]/95 p-6 shadow-soft backdrop-blur sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
+        <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa] p-6 shadow-soft sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
               <span>公开只读</span>
@@ -273,7 +273,7 @@ export function ShareDocumentPage({
         </section>
 
         {isPrintMode ? (
-          <div className="sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
+          <div className="app-safe-bottom sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
             <p className="mb-3 text-xs leading-6 text-muted">导出 PDF 后，文件保存位置由系统打印面板决定。</p>
             <div className="grid grid-cols-2 gap-3">
               <Link
@@ -295,7 +295,7 @@ export function ShareDocumentPage({
         ) : (
           <>
             <aside className="w-full shrink-0 lg:sticky lg:top-8 lg:w-[320px] print:hidden">
-              <section className="rounded-[28px] border border-black/5 bg-white/92 p-6 shadow-soft backdrop-blur sm:p-7">
+              <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-soft sm:p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
                 <h2 className="mt-3 font-display text-3xl leading-tight text-ink">把这份方案直接发给客户，或导出留档</h2>
                 <p className="mt-4 text-sm leading-7 text-muted">
@@ -368,7 +368,7 @@ export function ShareDocumentPage({
               </section>
             </aside>
 
-            <div className="sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
+            <div className="app-safe-bottom sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
               <p className="mb-3 text-xs leading-6 text-muted">导出后会打开系统打印面板，请选择“保存为 PDF”。</p>
               <div className="grid grid-cols-2 gap-3">
                 <Link

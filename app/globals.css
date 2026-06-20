@@ -4,6 +4,8 @@
 
 :root {
   color-scheme: light;
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 html {
@@ -47,4 +49,12 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+.app-safe-top {
+  padding-top: var(--app-safe-top);
+}
+
+.app-safe-bottom {
+  padding-bottom: var(--app-safe-bottom);
 }

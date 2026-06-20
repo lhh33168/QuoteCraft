@@ -256,7 +256,7 @@ export function LoginFormCard() {
   const sendDisabled = isPending || cooldownSeconds > 0 || trimmedEmail.length === 0 || !emailValid;
 
   return (
-    <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 shadow-soft backdrop-blur sm:p-8">
+    <section className="rounded-[30px] border border-white/80 bg-white/92 p-6 shadow-soft sm:p-8">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="font-display text-3xl text-ink">邮箱验证码登录</h2>
