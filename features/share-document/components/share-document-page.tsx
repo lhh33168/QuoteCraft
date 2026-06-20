@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { PageBackButton } from "@/shared/ui/page-back-button";
@@ -28,7 +28,7 @@ const projectTypeLabelMap: Record<ProjectType, string> = {
 
 const exportSteps = [
   "点击“导出 PDF 到本地”",
-  "在系统面板中选择“保存为 PDF”",
+  "在系统面板里选择“保存为 PDF”",
   "选择保存位置后完成下载"
 ];
 
@@ -103,49 +103,35 @@ export function ShareDocumentPage({
 
   const exportButtonLabel =
     exportState === "processing" ? "正在准备导出..." : "导出 PDF 到本地";
-  const topExportButtonLabel =
-    exportState === "processing" ? "正在打开导出面板..." : "重新导出 PDF";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
-      {isPrintMode ? (
-        <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-30 print:hidden">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-              <Link
-                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
-                href={sharePageHref}
-              >
-                返回方案页
-              </Link>
-              <button
-                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/60"
-                disabled={exportState === "processing"}
-                onClick={handlePrintDownload}
-                type="button"
-              >
-                {topExportButtonLabel}
-              </button>
-              <Link
-                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
-                href={printPageHref}
-              >
-                保持当前预览
-              </Link>
-            </div>
+      <PageTopBar
+        backHref={isPrintMode ? sharePageHref : isLoggedIn ? "/workspace" : "/login"}
+        backLabel={isPrintMode ? "返回方案页" : isLoggedIn ? "返回工作台" : "返回登录"}
+        eyebrow="报价助手"
+        title={isPrintMode ? "PDF 导出预览" : "客户查看页"}
+      />
 
-            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-900">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-ink">导出步骤</p>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-800">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-28 pt-4 sm:px-6 sm:pb-32 sm:pt-5 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
+        <section className="flex-1 rounded-[30px] border border-black/5 bg-[#fffdfa] p-5 shadow-soft sm:rounded-[32px] sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
+          {isPrintMode ? (
+            <div className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50/92 p-4 text-sm leading-7 text-sky-900 print:hidden sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">导出指引</p>
+                  <p className="mt-2 font-semibold text-ink">当前正在查看适合导出 PDF 的打印预览页。</p>
+                </div>
+                <span className="inline-flex w-fit items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-sky-800">
                   {exportState === "processing"
                     ? "导出进行中"
                     : exportState === "done"
-                      ? "可再次导出"
+                      ? "可以再次导出"
                       : "等待操作"}
                 </span>
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
+
+              <div className="mt-4 flex flex-wrap gap-2">
                 {exportSteps.map((step, index) => (
                   <span
                     className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-white px-3 py-1.5 text-xs font-medium text-sky-900"
@@ -158,33 +144,15 @@ export function ShareDocumentPage({
                   </span>
                 ))}
               </div>
+
               {exportMessage ? <p className="mt-3 text-xs leading-6 text-pine">{exportMessage}</p> : null}
             </div>
-          </div>
-        </div>
-      ) : (
-        <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-20 print:hidden">
-          <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 lg:px-8">
-            <PageBackButton
-              fallbackHref={isLoggedIn ? "/workspace" : "/login"}
-              label={isLoggedIn ? "返回工作台" : "返回登录"}
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-pine">报价助手</p>
-              <p className="truncate text-sm font-semibold text-ink">客户查看页</p>
+          ) : (
+            <div className="mb-5 rounded-[24px] border border-amber-200 bg-amber-50/92 p-4 text-sm leading-7 text-amber-800 print:hidden sm:p-5">
+              当前页面用于客户查看方案详情与报价内容。需要留档、发给同事，或保存到手机时，可点击“导出 PDF 到本地”。
             </div>
-            <Link
-              className="hidden rounded-full border border-black/8 bg-white/84 px-4 py-2 text-xs font-semibold text-ink transition hover:border-pine/30 hover:text-pine sm:inline-flex"
-              href={isLoggedIn ? "/workspace" : "/login"}
-            >
-              {isLoggedIn ? "打开工作台" : "去登录"}
-            </Link>
-          </div>
-        </div>
-      )}
+          )}
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-28 pt-6 sm:px-6 sm:pb-32 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
-        <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa] p-6 shadow-soft sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
               <span>公开只读</span>
@@ -194,13 +162,7 @@ export function ShareDocumentPage({
             <p className="text-xs leading-6 text-muted">分享标识：{token}</p>
           </div>
 
-          {!isPrintMode ? (
-            <div className="mt-6 rounded-[28px] border border-amber-200 bg-amber-50/90 p-4 text-sm leading-7 text-amber-800 sm:p-5 print:hidden">
-              当前页面用于客户查看方案详情与报价内容。需要留档、发给同事，或保存到手机时，可点击右侧“导出 PDF 到本地”。
-            </div>
-          ) : null}
-
-          <header className="mt-6 rounded-[28px] bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-6 py-8 text-white print:mt-0 print:rounded-none">
+          <header className="mt-5 rounded-[28px] bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-5 py-7 text-white sm:px-6 sm:py-8 print:mt-0 print:rounded-none">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
               QuoteCraft Proposal
             </div>
@@ -305,7 +267,7 @@ export function ShareDocumentPage({
           />
         ) : (
           <>
-            <aside className="w-full shrink-0 lg:sticky lg:top-8 lg:w-[320px] print:hidden">
+            <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-[320px] print:hidden">
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-soft sm:p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
                 <h2 className="mt-3 font-display text-3xl leading-tight text-ink">
@@ -396,7 +358,7 @@ export function ShareDocumentPage({
                   className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[15px] font-semibold text-ink sm:min-h-11"
                   href={printPageHref}
                 >
-                  预览 PDF 版
+                  预览 PDF
                 </Link>
               }
             />
@@ -407,18 +369,47 @@ export function ShareDocumentPage({
   );
 }
 
+function PageTopBar({
+  title,
+  eyebrow,
+  backHref,
+  backLabel
+}: {
+  title: string;
+  eyebrow: string;
+  backHref: Route;
+  backLabel: string;
+}) {
+  return (
+    <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-30 print:hidden">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 py-3 sm:grid-cols-[48px_minmax(0,1fr)_48px]">
+          <div className="shrink-0">
+            <PageBackButton fallbackHref={backHref} label={backLabel} />
+          </div>
+          <div className="min-w-0 text-center">
+            <p className="truncate text-[16px] font-semibold text-ink sm:text-[18px]">{title}</p>
+            <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">{eyebrow}</p>
+          </div>
+          <div aria-hidden="true" className="h-11 w-11 sm:h-12 sm:w-12" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MobileBottomBar({
   note,
   secondaryAction,
   primaryAction
 }: {
   note: string;
-  secondaryAction: React.ReactNode;
-  primaryAction: React.ReactNode;
+  secondaryAction: ReactNode;
+  primaryAction: ReactNode;
 }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 lg:hidden print:hidden">
-      <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-7xl px-3 sm:px-6">
         <div className="app-safe-bottom-comfortable app-bottom-bar app-bottom-bar-compact app-bottom-bar-panel px-3 pb-0 pt-3">
           <p className="mb-2 text-[11px] leading-5 text-muted/90">{note}</p>
           <div className="grid grid-cols-2 gap-2">

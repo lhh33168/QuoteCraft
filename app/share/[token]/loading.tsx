@@ -2,21 +2,26 @@ export default function SharePageLoading() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)]">
       <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-20">
-        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 lg:px-8">
-          <div className="h-10 w-10 animate-pulse rounded-[18px] bg-white shadow-[0_8px_20px_rgba(19,33,29,0.05)]" />
-          <div className="min-w-0 flex-1">
-            <div className="h-3 w-20 animate-pulse rounded-full bg-pine/10" />
-            <div className="mt-2 h-4 w-32 animate-pulse rounded-full bg-black/8" />
+        <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 py-3 sm:grid-cols-[48px_minmax(0,1fr)_48px]">
+            <div className="h-11 w-11 animate-pulse rounded-full bg-white/90 shadow-[0_6px_16px_rgba(19,33,29,0.05)] sm:h-12 sm:w-12" />
+            <div className="min-w-0 text-center">
+              <div className="mx-auto h-4 w-28 animate-pulse rounded-full bg-black/8" />
+              <div className="mx-auto mt-2 h-3 w-20 animate-pulse rounded-full bg-pine/10" />
+            </div>
+            <div className="h-11 w-11 sm:h-12 sm:w-12" />
           </div>
         </div>
       </div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-8">
-        <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa] p-6 shadow-soft sm:p-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 py-4 sm:px-6 sm:py-5 lg:flex-row lg:items-start lg:gap-8 lg:py-8">
+        <section className="flex-1 rounded-[30px] border border-black/5 bg-[#fffdfa] p-5 shadow-soft sm:rounded-[32px] sm:p-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
             正在打开示例方案
           </div>
-          <div className="mt-6 h-12 w-3/4 animate-pulse rounded-[20px] bg-black/6" />
+
+          <div className="mt-5 h-12 w-3/4 animate-pulse rounded-[20px] bg-black/6" />
+
           <div className="mt-4 space-y-3">
             <div className="h-4 w-full animate-pulse rounded-full bg-black/6" />
             <div className="h-4 w-11/12 animate-pulse rounded-full bg-black/6" />

@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import type { Route } from "next";
 import { useEffect } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
+import { PageBackButton } from "@/shared/ui/page-back-button";
 
 type ProjectPrintPageProps = {
   detail: ProjectDetail;
@@ -32,43 +34,61 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
   }, []);
 
   return (
-    <main className="app-safe-top app-safe-bottom min-h-screen bg-[#f5f1e8] print:bg-white">
-      <div className="mx-auto max-w-5xl px-4 py-6 print:max-w-none print:px-0 print:py-0">
-        <section className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-20 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-5 py-4 print:hidden">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">PDF 导出预览</p>
-            <h1 className="mt-2 text-xl font-semibold text-ink">{project.title || "未命名项目"}</h1>
-            <p className="mt-1 text-sm text-muted">页面已自动打开打印预览，也可以手动再次打印并保存为 PDF。</p>
+    <main className="app-safe-bottom min-h-screen bg-[#f5f1e8] print:bg-white">
+      <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-30 print:hidden">
+        <div className="mx-auto w-full max-w-7xl px-3 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-2 py-3 sm:grid-cols-[48px_minmax(0,1fr)_48px]">
+            <div className="shrink-0">
+              <PageBackButton fallbackHref={`/projects/${project.id}` as Route} label="返回编辑页" />
+            </div>
+            <div className="min-w-0 text-center">
+              <p className="truncate text-[16px] font-semibold text-ink sm:text-[18px]">PDF 导出预览</p>
+              <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">报价助手</p>
+            </div>
+            <div aria-hidden="true" className="h-11 w-11 sm:h-12 sm:w-12" />
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
-              onClick={() => window.print()}
-              type="button"
-            >
-              打印 / 保存为 PDF
-            </button>
-            <Link
-              className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink"
-              href={`/projects/${project.id}`}
-            >
-              返回编辑页
-            </Link>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-7xl px-3 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-5 print:max-w-none print:px-0 print:py-0">
+        <section className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50/92 p-4 text-sm leading-7 text-sky-900 print:hidden sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">导出指引</p>
+              <p className="mt-2 font-semibold text-ink">页面已自动打开系统打印面板，也可以手动再次导出。</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
+                onClick={() => window.print()}
+                type="button"
+              >
+                打印 / 保存为 PDF
+              </button>
+              <Link
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
+                href={`/projects/${project.id}`}
+              >
+                返回编辑页
+              </Link>
+            </div>
           </div>
         </section>
 
-        <article className="overflow-hidden rounded-[32px] border border-black/5 bg-white shadow-soft print:rounded-none print:border-0 print:shadow-none">
-          <header className="border-b border-black/8 bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-6 py-8 text-white sm:px-8">
+        <article className="overflow-hidden rounded-[30px] border border-black/5 bg-white shadow-soft print:rounded-none print:border-0 print:shadow-none sm:rounded-[32px]">
+          <header className="border-b border-black/8 bg-[linear-gradient(135deg,#17344f_0%,#184d3f_55%,#2c7864_100%)] px-5 py-7 text-white sm:px-8 sm:py-8">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]">
               QuoteCraft Proposal
             </div>
-            <h2 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">{project.title || "未命名项目"}</h2>
+            <h2 className="mt-4 font-display text-4xl leading-tight sm:text-5xl">
+              {project.title || "未命名项目"}
+            </h2>
             <p className="mt-4 max-w-3xl text-sm leading-8 text-white/80 sm:text-base">
               {renderParagraph(project.summary, "这是一份用于客户沟通和报价确认的项目方案。")}
             </p>
           </header>
 
-          <div className="px-6 py-8 sm:px-8">
+          <div className="px-5 py-7 sm:px-8 sm:py-8">
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <InfoCard label="客户名称" value={project.clientName || "待补充"} />
               <InfoCard label="客户公司" value={project.clientCompany || "待补充"} />
@@ -131,7 +151,9 @@ export function ProjectPrintPage({ detail }: ProjectPrintPageProps) {
               <p className="mt-3 text-sm leading-7 text-muted">
                 交付说明：{renderParagraph(project.deliveryNote, "暂无交付说明。")}
               </p>
-              <p className="mt-2 text-sm leading-7 text-muted">项目备注：{renderParagraph(project.remark, "暂无备注。")}</p>
+              <p className="mt-2 text-sm leading-7 text-muted">
+                项目备注：{renderParagraph(project.remark, "暂无备注。")}
+              </p>
             </section>
           </div>
         </article>
