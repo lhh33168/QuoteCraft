@@ -14,7 +14,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="zh-CN">
-      <body>
+      <body
+        style={{
+          minHeight: "100vh",
+          margin: 0,
+          color: "#15211d",
+          background:
+            "radial-gradient(circle at 10% 12%, rgba(24, 77, 63, 0.16), transparent 24%), radial-gradient(circle at 88% 8%, rgba(22, 50, 80, 0.14), transparent 24%), linear-gradient(180deg, #f6f3ed 0%, #edf1ed 100%)"
+        }}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

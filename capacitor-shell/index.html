@@ -11,8 +11,8 @@
       :root {
         color-scheme: light;
         font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-        background: #f5f7fb;
-        color: #122033;
+        background: #edf1ed;
+        color: #15211d;
       }
 
       * {
@@ -24,39 +24,214 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
-        background-color: #f5f7fb;
+        overflow: hidden;
         background:
-          radial-gradient(circle at top, rgba(27, 99, 242, 0.12), transparent 42%),
-          linear-gradient(180deg, #f9fbff 0%, #f2f5fb 100%);
+          radial-gradient(circle at 10% 12%, rgba(24, 77, 63, 0.16), transparent 24%),
+          radial-gradient(circle at 88% 8%, rgba(22, 50, 80, 0.14), transparent 24%),
+          linear-gradient(180deg, #f6f3ed 0%, #edf1ed 100%);
       }
 
-      main {
-        width: min(92vw, 520px);
-        padding: 32px 24px;
-        border-radius: 28px;
-        background: rgba(255, 255, 255, 0.92);
-        box-shadow: 0 24px 60px rgba(18, 32, 51, 0.12);
-        text-align: center;
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(21, 34, 29, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(21, 34, 29, 0.03) 1px, transparent 1px);
+        background-size: 28px 28px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 88%);
+      }
+
+      .shell {
+        width: min(92vw, 560px);
+        position: relative;
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 30px;
+        padding: 28px 24px;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background:
+          radial-gradient(circle at top, rgba(255, 255, 255, 0.18), transparent 35%),
+          linear-gradient(135deg, #17344f 0%, #184d3f 48%, #2c7864 100%);
+        box-shadow: 0 28px 60px rgba(18, 32, 51, 0.16);
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        right: -42px;
+        top: -58px;
+        width: 192px;
+        height: 192px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        filter: blur(36px);
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        left: -20px;
+        bottom: -80px;
+        width: 224px;
+        height: 224px;
+        border-radius: 999px;
+        background: rgba(247, 198, 106, 0.18);
+        filter: blur(42px);
+      }
+
+      .hero-inner {
+        position: relative;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
       }
 
       h1 {
-        margin: 0 0 12px;
-        font-size: 28px;
-        line-height: 1.2;
+        margin: 18px 0 0;
+        font-size: clamp(34px, 8vw, 52px);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
       }
 
-      p {
-        margin: 0;
-        font-size: 15px;
+      .summary {
+        margin: 18px 0 0;
+        max-width: 34rem;
+        font-size: 14px;
+        line-height: 1.9;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      .steps {
+        margin-top: 22px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .step {
+        border-radius: 22px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .step-label {
+        font-size: 11px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.64);
+      }
+
+      .step-title {
+        margin-top: 10px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .step-text {
+        margin-top: 6px;
+        font-size: 12px;
         line-height: 1.7;
-        color: #506176;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .footer {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #f7c66a;
+        box-shadow: 0 0 0 8px rgba(247, 198, 106, 0.12);
+        animation: pulse 1.8s ease-in-out infinite;
+      }
+
+      .footer-text {
+        font-size: 13px;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.82);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+
+        50% {
+          transform: scale(1.08);
+          opacity: 0.82;
+        }
+      }
+
+      @media (min-width: 640px) {
+        .hero {
+          padding: 32px;
+        }
+
+        .steps {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .summary {
+          font-size: 15px;
+        }
       }
     </style>
   </head>
   <body>
-    <main>
-      <h1>QuoteCraft 正在启动</h1>
-      <p>当前 App 使用远程站点壳模式。若看到此页面，请检查移动端配置中的站点地址是否可访问。</p>
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow">Quick Access</div>
+          <h1>报价助手正在启动</h1>
+          <p class="summary">
+            正在连接你的报价工作台，准备项目、客户与方案数据。通常几秒内即可完成。
+          </p>
+
+          <div class="steps">
+            <article class="step">
+              <div class="step-label">Step 01</div>
+              <div class="step-title">连接工作台</div>
+              <div class="step-text">加载当前账号环境与核心能力配置。</div>
+            </article>
+            <article class="step">
+              <div class="step-label">Step 02</div>
+              <div class="step-title">准备项目数据</div>
+              <div class="step-text">同步项目列表、客户资料与分享能力。</div>
+            </article>
+            <article class="step">
+              <div class="step-label">Step 03</div>
+              <div class="step-title">进入继续编辑</div>
+              <div class="step-text">完成首屏渲染后自动进入正式页面。</div>
+            </article>
+          </div>
+
+          <div class="footer">
+            <span class="dot" aria-hidden="true"></span>
+            <div class="footer-text">如果停留过久，请检查当前 App 连接的站点地址是否可正常访问。</div>
+          </div>
+        </div>
+      </section>
     </main>
   </body>
 </html>
