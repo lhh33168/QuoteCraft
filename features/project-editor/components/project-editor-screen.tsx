@@ -572,7 +572,6 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
                 <h2 className="font-display text-[1.85rem] leading-[1.08] text-ink sm:text-[2.1rem]">
                   {t("editorScreen.aiAndOutput")}
                 </h2>
-                <p className="mt-2 text-sm leading-7 text-muted">{t("editorScreen.aiDescription")}</p>
               </div>
               {isAiPending ? (
                 <span className="inline-flex items-center gap-2 rounded-full bg-pine/8 px-3 py-2 text-xs font-semibold text-pine">
