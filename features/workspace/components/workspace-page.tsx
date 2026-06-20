@@ -1,11 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import { ProjectListActions } from "@/features/workspace/components/project-list-actions";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { Project } from "@/shared/types/project";
 import { AppShell } from "@/shared/ui/app-shell";
+import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
+import { MobileActionBar } from "@/shared/ui/mobile-action-bar";
 import { StatusBadge } from "@/shared/ui/status-badge";
 
 type WorkspacePageProps = {
@@ -15,6 +19,8 @@ type WorkspacePageProps = {
   onSearchChange: (value: string) => void;
 };
 
+type WorkspaceActionState = "idle" | "create" | "template";
+
 const projectTypeLabelMap: Record<Project["projectType"], string> = {
   website: "官网开发",
   mini_program: "小程序开发",
@@ -23,8 +29,27 @@ const projectTypeLabelMap: Record<Project["projectType"], string> = {
 };
 
 export function WorkspacePage({ projects, notice, searchValue, onSearchChange }: WorkspacePageProps) {
+  const router = useRouter();
   const hasProjects = projects.length > 0;
   const isSearching = searchValue.trim().length > 0;
+  const [actionState, setActionState] = useState<WorkspaceActionState>("idle");
+  const createHref = "/projects/new" as Route;
+  const templateHref = "/projects/new?template=education-site" as Route;
+
+  useEffect(() => {
+    router.prefetch(createHref);
+    router.prefetch(templateHref);
+  }, [createHref, router, templateHref]);
+
+  function handleOpenCreate() {
+    setActionState("create");
+    router.push(createHref);
+  }
+
+  function handleOpenTemplate() {
+    setActionState("template");
+    router.push(templateHref);
+  }
 
   return (
     <AppShell
@@ -37,28 +62,36 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
       actions={
         <>
           <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink"
+            className="hidden min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink lg:inline-flex"
             href="/settings/billing"
           >
             查看订阅
           </Link>
-          <Link
-            className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
-            href="/projects/new"
+          <button
+            className="hidden min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white lg:inline-flex"
+            onClick={handleOpenCreate}
+            onFocus={() => router.prefetch(createHref)}
+            onMouseEnter={() => router.prefetch(createHref)}
+            onTouchStart={() => router.prefetch(createHref)}
+            type="button"
           >
-            新建项目
-          </Link>
+            <span className="inline-flex items-center gap-2">
+              <ButtonLoadingContent
+                idleLabel="新建项目"
+                loading={actionState === "create"}
+                loadingLabel="正在打开..."
+              />
+            </span>
+          </button>
         </>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[1.45fr_0.8fr] lg:gap-7">
+      <div className="grid gap-6 pb-28 lg:grid-cols-[1.45fr_0.8fr] lg:gap-7 lg:pb-0">
         <section className="px-1 py-1 sm:px-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="font-display text-3xl text-ink sm:text-[2.1rem]">我的项目</h2>
-              <p className="mt-2 text-sm leading-7 text-muted">
-                从这里继续编辑、分享，或者复用历史项目。
-              </p>
+              <h2 className="font-display text-[1.95rem] leading-[1.08] text-ink sm:text-[2.25rem]">我的项目</h2>
+              <p className="mt-2 text-sm leading-7 text-muted">从这里继续编辑、分享，或者复用历史项目。</p>
             </div>
             <div className="w-full sm:max-w-sm">
               <label className="sr-only" htmlFor="workspace-search">
@@ -72,6 +105,18 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
                 value={searchValue}
               />
             </div>
+          </div>
+
+          <div className="mt-3 flex justify-end lg:hidden">
+            <Link
+              className="inline-flex items-center gap-1 text-sm font-medium text-muted transition hover:text-ink"
+              href="/settings/billing"
+            >
+              订阅与额度
+              <span aria-hidden="true" className="text-base leading-none">
+                ›
+              </span>
+            </Link>
           </div>
 
           {notice ? (
@@ -89,43 +134,114 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           </div>
         </section>
 
-        <aside className="space-y-5">
+        <aside className="hidden space-y-5 lg:block">
           <section className="rounded-[26px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-5 text-white sm:rounded-[30px] sm:p-6">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
               Today
             </div>
-            <h2 className="mt-4 font-display text-4xl leading-none">下午 4 点前完成 2 份方案</h2>
+            <h2 className="mt-4 font-display text-[2rem] leading-[1.02] sm:text-[2.35rem]">下午 4 点前完成 2 份方案</h2>
             <p className="mt-4 text-sm leading-7 text-white/80">
               当前有 1 个客户待分享，2 个历史项目待复用。先把报价发出去，再继续润色方案。
             </p>
           </section>
 
           <section className="rounded-[24px] border border-white/80 bg-white/76 p-5 shadow-[0_18px_40px_rgba(19,33,29,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-6">
-            <h2 className="font-display text-3xl text-ink">快捷动作</h2>
+            <h2 className="font-display text-[1.7rem] leading-[1.08] text-ink sm:text-[1.95rem]">快捷动作</h2>
             <div className="mt-5 grid gap-3">
-              <Link
+              <button
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
-                href="/projects/new"
+                onClick={handleOpenCreate}
+                onFocus={() => router.prefetch(createHref)}
+                onMouseEnter={() => router.prefetch(createHref)}
+                onTouchStart={() => router.prefetch(createHref)}
+                type="button"
               >
-                创建新报价
-              </Link>
-              <Link
+                <span className="inline-flex items-center gap-2">
+                  <ButtonLoadingContent
+                    idleLabel="创建新报价"
+                    loading={actionState === "create"}
+                    loadingLabel="正在打开..."
+                  />
+                </span>
+              </button>
+              <button
                 className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white px-5 text-sm font-semibold whitespace-nowrap text-ink"
-                href="/projects/new?template=education-site"
+                onClick={handleOpenTemplate}
+                onFocus={() => router.prefetch(templateHref)}
+                onMouseEnter={() => router.prefetch(templateHref)}
+                onTouchStart={() => router.prefetch(templateHref)}
+                type="button"
               >
-                基于示例创建
-              </Link>
+                <span className="inline-flex items-center gap-2">
+                  <ButtonLoadingContent
+                    idleLabel="基于示例创建"
+                    loading={actionState === "template"}
+                    loadingLabel="正在打开..."
+                    spinnerTone="dark"
+                  />
+                </span>
+              </button>
             </div>
           </section>
         </aside>
       </div>
+
+      <MobileActionBar
+        note="可从这里快速创建新项目，或直接使用示例模板开始。"
+        primaryAction={
+          <button
+            className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)]"
+            onClick={handleOpenCreate}
+            onFocus={() => router.prefetch(createHref)}
+            onMouseEnter={() => router.prefetch(createHref)}
+            onTouchStart={() => router.prefetch(createHref)}
+            type="button"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ButtonLoadingContent
+                idleLabel="新建项目"
+                loading={actionState === "create"}
+                loadingLabel="正在打开..."
+              />
+            </span>
+          </button>
+        }
+        secondaryAction={
+          <button
+            className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)]"
+            onClick={handleOpenTemplate}
+            onFocus={() => router.prefetch(templateHref)}
+            onMouseEnter={() => router.prefetch(templateHref)}
+            onTouchStart={() => router.prefetch(templateHref)}
+            type="button"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ButtonLoadingContent
+                idleLabel="示例模板"
+                loading={actionState === "template"}
+                loadingLabel="正在打开..."
+                spinnerTone="dark"
+              />
+            </span>
+          </button>
+        }
+      />
     </AppShell>
   );
 }
 
 function ProjectCard({ project }: { project: Project }) {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [navState, setNavState] = useState<"idle" | "edit" | "share">("idle");
   const [isCopyPending, startCopyTransition] = useTransition();
+  const editHref = `/projects/${project.id}` as Route;
+  const shareHref = `/projects/${project.id}/share` as Route;
+
+  function prefetchProjectRoutes() {
+    router.prefetch(editHref);
+    router.prefetch(shareHref);
+  }
 
   async function ensureShareUrl() {
     const response = await fetch(`/api/projects/${project.id}/share`, {
@@ -143,9 +259,16 @@ function ProjectCard({ project }: { project: Project }) {
     return new URL(data.shareUrl, window.location.origin).toString();
   }
 
+  function handleOpenEditor() {
+    setNavState("edit");
+    setMessage("正在打开编辑页...");
+    router.push(editHref);
+  }
+
   function handleOpenSharePage() {
+    setNavState("share");
     setMessage("正在打开客户页...");
-    window.open(`/projects/${project.id}/share`, "_blank", "noopener,noreferrer");
+    window.open(shareHref, "_blank", "noopener,noreferrer");
   }
 
   function handleCopyShareLink() {
@@ -182,18 +305,38 @@ function ProjectCard({ project }: { project: Project }) {
       </div>
 
       <div className="mt-5 flex flex-wrap gap-3">
-        <Link
+        <button
           className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold whitespace-nowrap text-white"
-          href={`/projects/${project.id}`}
+          onClick={handleOpenEditor}
+          onFocus={prefetchProjectRoutes}
+          onMouseEnter={prefetchProjectRoutes}
+          onTouchStart={prefetchProjectRoutes}
+          type="button"
         >
-          继续编辑
-        </Link>
+          <span className="inline-flex items-center gap-2">
+            <ButtonLoadingContent
+              idleLabel="继续编辑"
+              loading={navState === "edit"}
+              loadingLabel="正在打开..."
+            />
+          </span>
+        </button>
         <button
           className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink"
           onClick={handleOpenSharePage}
+          onFocus={prefetchProjectRoutes}
+          onMouseEnter={prefetchProjectRoutes}
+          onTouchStart={prefetchProjectRoutes}
           type="button"
         >
-          查看客户页
+          <span className="inline-flex items-center gap-2">
+            <ButtonLoadingContent
+              idleLabel="查看客户页"
+              loading={navState === "share"}
+              loadingLabel="正在打开..."
+              spinnerTone="dark"
+            />
+          </span>
         </button>
         <button
           className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
@@ -201,7 +344,14 @@ function ProjectCard({ project }: { project: Project }) {
           onClick={handleCopyShareLink}
           type="button"
         >
-          {isCopyPending ? "正在复制..." : "复制分享链接"}
+          <span className="inline-flex items-center gap-2">
+            <ButtonLoadingContent
+              idleLabel="复制分享链接"
+              loading={isCopyPending}
+              loadingLabel="正在复制..."
+              spinnerTone="dark"
+            />
+          </span>
         </button>
       </div>
 

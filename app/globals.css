@@ -76,22 +76,45 @@ textarea {
 }
 
 .app-safe-bottom-comfortable {
-  padding-bottom: max(16px, calc(var(--app-safe-bottom) + 8px));
+  padding-bottom: max(14px, calc(var(--app-safe-bottom) + 6px));
 }
 
 .app-bottom-bar {
-  border-top: 1px solid rgba(21, 34, 29, 0.08);
-  background: #f7faf7;
-  box-shadow: 0 -14px 32px rgba(19, 33, 29, 0.08);
+  border-top: 1px solid rgba(21, 34, 29, 0.05);
+  background:
+    linear-gradient(180deg, rgba(251, 252, 250, 0.96) 0%, rgba(245, 249, 246, 0.98) 100%);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.72) inset,
+    0 -14px 30px rgba(19, 33, 29, 0.07);
 }
 
 .app-bottom-bar-compact {
-  border-top-color: rgba(21, 34, 29, 0.06);
-  box-shadow: 0 -10px 24px rgba(19, 33, 29, 0.06);
+  border-top-color: rgba(21, 34, 29, 0.045);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.74) inset,
+    0 -10px 24px rgba(19, 33, 29, 0.055);
 }
 
 .app-bottom-bar-panel {
   border-radius: 24px 24px 0 0;
   border-left: 1px solid rgba(21, 34, 29, 0.05);
   border-right: 1px solid rgba(21, 34, 29, 0.05);
+}
+
+.mobile-bottom-bar-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mobile-bottom-bar-action {
+  display: flex;
+}
+
+.mobile-bottom-bar-action > * {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+  border-radius: 18px;
 }

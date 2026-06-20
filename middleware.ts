@@ -6,8 +6,9 @@ const protectedPrefixes = ["/workspace", "/projects", "/settings"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
 
-  if (pathname.startsWith("/share")) {
+  if (pathname.startsWith("/share") || pathname.startsWith("/api") || !isProtected) {
     return NextResponse.next();
   }
 
@@ -16,8 +17,6 @@ export async function middleware(request: NextRequest) {
   if (sessionState.skipped) {
     return sessionState.response;
   }
-
-  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
 
   if (isProtected && !sessionState.authenticated) {
     const loginUrl = new URL("/login", request.url);
@@ -29,5 +28,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
 };

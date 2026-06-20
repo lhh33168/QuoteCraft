@@ -46,14 +46,14 @@ export function AppShell({
       </div>
 
       <section className="mx-2 overflow-hidden rounded-[30px] border border-black/5 bg-[#f8faf6] shadow-[0_24px_70px_rgba(19,33,29,0.08)] sm:mx-0 sm:rounded-[34px]">
-        <header className="relative flex flex-col gap-5 border-b border-black/6 bg-[radial-gradient(circle_at_top_right,_rgba(24,77,63,0.08),_transparent_30%),radial-gradient(circle_at_left_top,_rgba(23,52,79,0.05),_transparent_20%),linear-gradient(180deg,#ffffff_0%,#f7faf7_100%)] px-3 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
+        <header className="relative flex flex-col gap-4 border-b border-black/6 bg-[radial-gradient(circle_at_top_right,_rgba(24,77,63,0.08),_transparent_30%),radial-gradient(circle_at_left_top,_rgba(23,52,79,0.05),_transparent_20%),linear-gradient(180deg,#ffffff_0%,#f7faf7_100%)] px-3 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-pine/10 bg-white px-3 py-1.5 text-[11px] font-semibold tracking-[0.22em] text-pine shadow-[0_10px_24px_rgba(19,33,29,0.04)]">
               <span className="h-2 w-2 rounded-full bg-pine/70" />
               {eyebrow}
             </div>
-            <h1 className="mt-3 max-w-3xl font-display text-3xl leading-tight text-ink sm:text-5xl">{title}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted sm:text-base">{description}</p>
+            <h1 className="mt-2.5 max-w-3xl font-display text-[2rem] leading-[1.08] text-ink sm:text-[3.2rem]">{title}</h1>
+            <p className="mt-2.5 max-w-3xl text-sm leading-7 text-muted sm:text-base">{description}</p>
           </div>
 
           {actions ? (

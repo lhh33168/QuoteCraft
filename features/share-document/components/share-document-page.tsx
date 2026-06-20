@@ -3,9 +3,11 @@
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
+import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
+import { MobileActionBar } from "@/shared/ui/mobile-action-bar";
 import { PageBackButton } from "@/shared/ui/page-back-button";
 
 type ShareDocumentPageProps = {
@@ -18,6 +20,7 @@ type ShareDocumentPageProps = {
 };
 
 type ExportState = "idle" | "processing" | "done";
+type NavigationState = "idle" | "share" | "print" | "workspace" | "login" | "new";
 
 const projectTypeLabelMap: Record<ProjectType, string> = {
   website: "官网 / 品牌网站",
@@ -47,17 +50,41 @@ export function ShareDocumentPage({
   const sharePageHref = `/share/${token}` as Route;
   const printPageHref = `/share/${token}?print=1` as Route;
   const autoPrintHref = `/share/${token}?print=1&autoprint=1` as Route;
+  const workspaceHref = "/workspace" as Route;
+  const loginHref = "/login" as Route;
+  const loginWithNextHref = "/login?next=/workspace" as Route;
+  const createProjectHref = "/projects/new" as Route;
   const [exportState, setExportState] = useState<ExportState>(autoPrint ? "processing" : "idle");
+  const [navigationState, setNavigationState] = useState<NavigationState>("idle");
   const [exportMessage, setExportMessage] = useState<string | null>(
     autoPrint ? "正在准备导出 PDF，请稍候..." : null
   );
   const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
+
+  function prefetchTargets() {
+    router.prefetch(sharePageHref);
+    router.prefetch(printPageHref);
+    router.prefetch(autoPrintHref);
+    router.prefetch(workspaceHref);
+    router.prefetch(loginHref);
+    router.prefetch(loginWithNextHref);
+    router.prefetch(createProjectHref);
+  }
 
   function handlePrintDownload() {
     setExportState("processing");
     setExportMessage("系统打印面板正在打开，请在面板中选择“保存为 PDF”或“另存为 PDF”。");
     window.print();
   }
+
+  function handleNavigate(target: NavigationState, href: Route) {
+    setNavigationState(target);
+    router.push(href);
+  }
+
+  useEffect(() => {
+    prefetchTargets();
+  }, []);
 
   useEffect(() => {
     if (!isPrintMode) {
@@ -107,13 +134,13 @@ export function ShareDocumentPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
       <PageTopBar
-        backHref={isPrintMode ? sharePageHref : isLoggedIn ? "/workspace" : "/login"}
+        backHref={isPrintMode ? sharePageHref : isLoggedIn ? workspaceHref : loginHref}
         backLabel={isPrintMode ? "返回方案页" : isLoggedIn ? "返回工作台" : "返回登录"}
         eyebrow="报价助手"
         title={isPrintMode ? "PDF 导出预览" : "客户查看页"}
       />
 
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-28 pt-4 sm:px-6 sm:pb-32 sm:pt-5 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-3 pb-36 pt-4 sm:px-6 sm:pb-40 sm:pt-5 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
         <section className="flex-1 rounded-[30px] border border-black/5 bg-[#fffdfa] p-5 shadow-soft sm:rounded-[32px] sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           {isPrintMode ? (
             <div className="mb-5 rounded-[24px] border border-sky-100 bg-sky-50/92 p-4 text-sm leading-7 text-sky-900 print:hidden sm:p-5">
@@ -244,11 +271,11 @@ export function ShareDocumentPage({
         </section>
 
         {isPrintMode ? (
-          <MobileBottomBar
+          <MobileActionBar
             note="导出 PDF 后，文件保存位置由系统打印面板决定。"
             primaryAction={
               <button
-                className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-[15px] font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/60 sm:min-h-11"
+                className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)] disabled:cursor-not-allowed disabled:bg-pine/60"
                 disabled={exportState === "processing"}
                 onClick={handlePrintDownload}
                 type="button"
@@ -257,22 +284,24 @@ export function ShareDocumentPage({
               </button>
             }
             secondaryAction={
-              <Link
-                className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[15px] font-semibold text-ink sm:min-h-11"
-                href={sharePageHref}
+              <button
+                className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)]"
+                onClick={() => handleNavigate("share", sharePageHref)}
+                onFocus={prefetchTargets}
+                onMouseEnter={prefetchTargets}
+                onTouchStart={prefetchTargets}
+                type="button"
               >
-                返回方案页
-              </Link>
+                {navigationState === "share" ? "正在返回..." : "返回方案页"}
+              </button>
             }
           />
         ) : (
           <>
-            <aside className="w-full shrink-0 lg:sticky lg:top-28 lg:w-[320px] print:hidden">
+            <aside className="hidden w-full shrink-0 lg:sticky lg:top-28 lg:block lg:w-[320px] print:hidden">
               <section className="rounded-[28px] border border-black/5 bg-white p-6 shadow-soft sm:p-7">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
-                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">
-                  把这份方案直接发给客户，或导出留档
-                </h2>
+                <h2 className="mt-3 font-display text-3xl leading-tight text-ink">把这份方案直接发给客户，或导出留档</h2>
                 <p className="mt-4 text-sm leading-7 text-muted">
                   分享页适合快速查看，导出 PDF 更适合留档、发邮件，或发给团队内部继续跟进。
                 </p>
@@ -282,12 +311,22 @@ export function ShareDocumentPage({
                     <p className="text-sm font-semibold text-ink">主推荐操作</p>
                     <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-pine">推荐</span>
                   </div>
-                  <Link
+                  <button
                     className="mt-3 inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
-                    href={autoPrintHref}
+                    onClick={() => handleNavigate("print", autoPrintHref)}
+                    onFocus={prefetchTargets}
+                    onMouseEnter={prefetchTargets}
+                    onTouchStart={prefetchTargets}
+                    type="button"
                   >
-                    {exportButtonLabel}
-                  </Link>
+                    <span className="inline-flex items-center gap-2">
+                      <ButtonLoadingContent
+                        idleLabel={exportButtonLabel}
+                        loading={navigationState === "print"}
+                        loadingLabel="正在打开..."
+                      />
+                    </span>
+                  </button>
                   <div className="mt-3 space-y-2 text-xs leading-6 text-muted">
                     {exportSteps.map((step, index) => (
                       <p key={step}>
@@ -298,41 +337,96 @@ export function ShareDocumentPage({
                 </div>
 
                 <div className="mt-5 space-y-3">
-                  <Link
+                  <button
                     className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                    href={printPageHref}
+                    onClick={() => handleNavigate("print", printPageHref)}
+                    onFocus={prefetchTargets}
+                    onMouseEnter={prefetchTargets}
+                    onTouchStart={prefetchTargets}
+                    type="button"
                   >
-                    预览 PDF 版
-                  </Link>
+                    <span className="inline-flex items-center gap-2">
+                      <ButtonLoadingContent
+                        idleLabel="预览 PDF 版"
+                        loading={navigationState === "print"}
+                        loadingLabel="正在打开..."
+                        spinnerTone="dark"
+                      />
+                    </span>
+                  </button>
                   {isLoggedIn ? (
                     <>
-                      <Link
+                      <button
                         className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                        href="/workspace"
+                        onClick={() => handleNavigate("workspace", workspaceHref)}
+                        onFocus={prefetchTargets}
+                        onMouseEnter={prefetchTargets}
+                        onTouchStart={prefetchTargets}
+                        type="button"
                       >
-                        返回项目工作台
-                      </Link>
-                      <Link
+                        <span className="inline-flex items-center gap-2">
+                          <ButtonLoadingContent
+                            idleLabel="返回项目工作台"
+                            loading={navigationState === "workspace"}
+                            loadingLabel="正在打开..."
+                            spinnerTone="dark"
+                          />
+                        </span>
+                      </button>
+                      <button
                         className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                        href="/projects/new"
+                        onClick={() => handleNavigate("new", createProjectHref)}
+                        onFocus={prefetchTargets}
+                        onMouseEnter={prefetchTargets}
+                        onTouchStart={prefetchTargets}
+                        type="button"
                       >
-                        新建正式项目
-                      </Link>
+                        <span className="inline-flex items-center gap-2">
+                          <ButtonLoadingContent
+                            idleLabel="新建正式项目"
+                            loading={navigationState === "new"}
+                            loadingLabel="正在打开..."
+                            spinnerTone="dark"
+                          />
+                        </span>
+                      </button>
                     </>
                   ) : (
                     <>
-                      <Link
+                      <button
                         className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                        href="/login?next=/workspace"
+                        onClick={() => handleNavigate("login", loginWithNextHref)}
+                        onFocus={prefetchTargets}
+                        onMouseEnter={prefetchTargets}
+                        onTouchStart={prefetchTargets}
+                        type="button"
                       >
-                        登录后创建自己的方案
-                      </Link>
-                      <Link
+                        <span className="inline-flex items-center gap-2">
+                          <ButtonLoadingContent
+                            idleLabel="登录后创建自己的方案"
+                            loading={navigationState === "login"}
+                            loadingLabel="正在打开..."
+                            spinnerTone="dark"
+                          />
+                        </span>
+                      </button>
+                      <button
                         className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                        href="/login"
+                        onClick={() => handleNavigate("login", loginHref)}
+                        onFocus={prefetchTargets}
+                        onMouseEnter={prefetchTargets}
+                        onTouchStart={prefetchTargets}
+                        type="button"
                       >
-                        返回登录页
-                      </Link>
+                        <span className="inline-flex items-center gap-2">
+                          <ButtonLoadingContent
+                            idleLabel="返回登录页"
+                            loading={navigationState === "login"}
+                            loadingLabel="正在打开..."
+                            spinnerTone="dark"
+                          />
+                        </span>
+                      </button>
                     </>
                   )}
                 </div>
@@ -343,23 +437,40 @@ export function ShareDocumentPage({
               </section>
             </aside>
 
-            <MobileBottomBar
+            <MobileActionBar
               note="导出后会打开系统打印面板，请选择“保存为 PDF”。"
               primaryAction={
-                <Link
-                  className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-[15px] font-semibold text-white sm:min-h-11"
-                  href={autoPrintHref}
+                <button
+                  className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)]"
+                  onClick={() => handleNavigate("print", autoPrintHref)}
+                  onFocus={prefetchTargets}
+                  onMouseEnter={prefetchTargets}
+                  onTouchStart={prefetchTargets}
+                  type="button"
                 >
-                  导出 PDF
-                </Link>
+                  <span className="inline-flex items-center gap-2">
+                    <ButtonLoadingContent idleLabel="导出 PDF" loading={navigationState === "print"} loadingLabel="正在打开..." />
+                  </span>
+                </button>
               }
               secondaryAction={
-                <Link
-                  className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-[15px] font-semibold text-ink sm:min-h-11"
-                  href={printPageHref}
+                <button
+                  className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)]"
+                  onClick={() => handleNavigate("print", printPageHref)}
+                  onFocus={prefetchTargets}
+                  onMouseEnter={prefetchTargets}
+                  onTouchStart={prefetchTargets}
+                  type="button"
                 >
-                  预览 PDF
-                </Link>
+                  <span className="inline-flex items-center gap-2">
+                    <ButtonLoadingContent
+                      idleLabel="预览 PDF"
+                      loading={navigationState === "print"}
+                      loadingLabel="正在打开..."
+                      spinnerTone="dark"
+                    />
+                  </span>
+                </button>
               }
             />
           </>
@@ -392,30 +503,6 @@ function PageTopBar({
             <p className="mt-0.5 truncate text-[11px] tracking-[0.18em] text-muted">{eyebrow}</p>
           </div>
           <div aria-hidden="true" className="h-11 w-11 sm:h-12 sm:w-12" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MobileBottomBar({
-  note,
-  secondaryAction,
-  primaryAction
-}: {
-  note: string;
-  secondaryAction: ReactNode;
-  primaryAction: ReactNode;
-}) {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-30 lg:hidden print:hidden">
-      <div className="app-safe-bottom-comfortable app-bottom-bar app-bottom-bar-compact w-full border-x-0 px-3 pb-0 pt-3 sm:px-6">
-        <div className="pb-0">
-          <p className="mb-2 text-[11px] leading-5 text-muted/90">{note}</p>
-          <div className="grid grid-cols-2 gap-2">
-            {secondaryAction}
-            {primaryAction}
-          </div>
         </div>
       </div>
     </div>

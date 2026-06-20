@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { LoginStatus } from "@/features/auth/components/login-status";
 import { EMAIL_OTP_LENGTH } from "@/shared/constants/auth";
+import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
 
 type LoginStep = "request-code" | "verify-code";
 
@@ -22,9 +23,9 @@ function isValidEmail(email: string) {
 export function LoginFormCard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/workspace";
+  const next = (searchParams.get("next") ?? "/workspace") as Route;
   const callbackError = searchParams.get("error");
-  const demoShareHref = "/share/share-project-education-site";
+  const demoShareHref = "/share/share-project-education-site" as Route;
   const verifyFormRef = useRef<HTMLFormElement | null>(null);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const [email, setEmail] = useState("");
@@ -92,7 +93,8 @@ export function LoginFormCard() {
 
   useEffect(() => {
     router.prefetch(demoShareHref);
-  }, [demoShareHref, router]);
+    router.prefetch(next);
+  }, [demoShareHref, next, router]);
 
   async function handleSendCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -195,8 +197,7 @@ export function LoginFormCard() {
           kind: "success",
           message: data.message ?? "登录成功，正在进入工作台。"
         });
-        router.push(next as Route);
-        router.refresh();
+        router.push(next);
       } catch {
         setStatus({
           kind: "error",
@@ -324,7 +325,9 @@ export function LoginFormCard() {
               disabled={sendDisabled}
               type="submit"
             >
-              {sendButtonLabel}
+              <span className="inline-flex items-center gap-2">
+                <ButtonLoadingContent idleLabel={sendButtonLabel} loading={isPending} loadingLabel="发送中..." />
+              </span>
             </button>
             <Link
               className="inline-flex min-h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
@@ -412,7 +415,9 @@ export function LoginFormCard() {
               disabled={isPending || otpCode.length !== EMAIL_OTP_LENGTH}
               type="submit"
             >
-              {verifyButtonLabel}
+              <span className="inline-flex items-center gap-2">
+                <ButtonLoadingContent idleLabel={verifyButtonLabel} loading={isPending} loadingLabel="验证中..." />
+              </span>
             </button>
             <button
               className="inline-flex min-h-11 w-full items-center justify-center whitespace-nowrap rounded-[18px] bg-[#f5f7f4] px-4 text-sm font-semibold text-ink ring-1 ring-black/6 transition duration-200 hover:bg-white"
