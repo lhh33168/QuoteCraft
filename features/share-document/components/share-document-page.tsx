@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
+import { PageBackButton } from "@/shared/ui/page-back-button";
 
 type ShareDocumentPageProps = {
   document: ProjectDetail & {
@@ -41,7 +42,27 @@ export function ShareDocumentPage({ document, isLoggedIn, isPrintMode = false }:
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-12 print:max-w-5xl print:px-0 print:py-0">
+      {!isPrintMode ? (
+        <div className="sticky top-0 z-20 border-b border-black/6 bg-white/82 backdrop-blur-xl print:hidden">
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+            <PageBackButton
+              fallbackHref={isLoggedIn ? "/workspace" : "/login"}
+              label={isLoggedIn ? "返回工作台" : "返回登录"}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-pine">报价助手</p>
+              <p className="truncate text-sm font-semibold text-ink">客户查看页</p>
+            </div>
+            <Link
+              className="hidden rounded-full border border-black/8 bg-white/84 px-4 py-2 text-xs font-semibold text-ink transition hover:border-pine/30 hover:text-pine sm:inline-flex"
+              href={isLoggedIn ? "/workspace" : "/login"}
+            >
+              {isLoggedIn ? "打开工作台" : "去登录"}
+            </Link>
+          </div>
+        </div>
+      ) : null}
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
         <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa]/95 p-6 shadow-soft backdrop-blur sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">

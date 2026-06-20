@@ -13,7 +13,7 @@ function mapAuthError(errorMessage: string) {
   if (normalized.includes("email rate limit exceeded")) {
     return {
       status: 429,
-      message: "邮件发送过于频繁，请等待 60 秒后再试，或更换一个邮箱继续调试。"
+      message: "邮件发送过于频繁，请等待 60 秒后重试，或更换一个邮箱继续。"
     };
   }
 
@@ -30,11 +30,20 @@ function mapAuthError(errorMessage: string) {
   };
 }
 
+function normalizeNextPath(value?: string) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/workspace";
+  }
+
+  return value;
+}
+
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => ({}))) as {
     email?: string;
     captchaToken?: string;
     captchaAnswer?: string;
+    next?: string;
   };
 
   if (!body.email) {
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest) {
   if (!cooldownState.allowed) {
     return NextResponse.json(
       {
-        error: `发送过于频繁，请在 ${cooldownState.retryAfterSeconds} 秒后再试。`,
+        error: `发送过于频繁，请在 ${cooldownState.retryAfterSeconds} 秒后重试。`,
         retryAfterSeconds: cooldownState.retryAfterSeconds
       },
       { status: 429 }
@@ -71,12 +80,16 @@ export async function POST(request: NextRequest) {
 
   if (!isSupabaseBrowserConfigured()) {
     return NextResponse.json({
-      message: "当前尚未配置 Supabase，系统仍保留开发模式。补齐环境变量后即可发送真实登录邮件。"
+      message: "当前尚未配置 Supabase，系统仍处于本地演示模式。补齐环境变量后即可发送真实登录邮件。"
     });
   }
 
+  const nextPath = normalizeNextPath(body.next);
+  const emailRedirectUrl = new URL("/auth/callback", request.nextUrl.origin);
+  emailRedirectUrl.searchParams.set("next", nextPath);
+
   const response = NextResponse.json({
-    message: `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码。`,
+    message: `登录邮件已发送，请先查看邮箱中的 ${EMAIL_OTP_LENGTH} 位验证码；如果收到的是确认链接，也可以直接点击邮件按钮完成登录。`,
     retryAfterSeconds: 60
   });
   const supabase = createRouteAuthClient(request, response);
@@ -93,7 +106,8 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase.auth.signInWithOtp({
     email: body.email,
     options: {
-      shouldCreateUser: true
+      shouldCreateUser: true,
+      emailRedirectTo: emailRedirectUrl.toString()
     }
   });
 

@@ -46,7 +46,7 @@ export function LoginFormCard() {
     kind: "idle" | "success" | "error";
     message: string | null;
   }>({
-    kind: "idle",
+    kind: callbackError ? "error" : "idle",
     message: callbackError
   });
   const [isPending, startTransition] = useTransition();
@@ -58,6 +58,7 @@ export function LoginFormCard() {
   const otpInvalid = otpTouched && otpCode.length > 0 && otpCode.length < EMAIL_OTP_LENGTH;
   const otpDigits = Array.from({ length: EMAIL_OTP_LENGTH }, (_, index) => otpCode[index] ?? "");
   const stepProgress = step === "request-code" ? "50%" : "100%";
+  const emailForDisplay = lastSentEmail || trimmedEmail;
 
   function setError(message: string) {
     setStatus({
@@ -140,14 +141,14 @@ export function LoginFormCard() {
     }
 
     if (cooldownSeconds > 0) {
-      setError(`请等待 ${cooldownSeconds} 秒后再重新发送验证码。`);
+      setError(`请等待 ${cooldownSeconds} 秒后再重新发送。`);
       return;
     }
 
     startTransition(async () => {
       setStatus({
         kind: "idle",
-        message: "正在发送邮箱验证码..."
+        message: "正在发送登录邮件..."
       });
 
       try {
@@ -159,7 +160,8 @@ export function LoginFormCard() {
           body: JSON.stringify({
             email: trimmedEmail,
             captchaToken: captcha.token,
-            captchaAnswer
+            captchaAnswer,
+            next
           })
         });
 
@@ -172,7 +174,7 @@ export function LoginFormCard() {
 
           setStatus({
             kind: "error",
-            message: data.error ?? "验证码发送失败，请稍后重试。"
+            message: data.error ?? "登录邮件发送失败，请稍后重试。"
           });
           loadCaptcha();
           return;
@@ -188,7 +190,9 @@ export function LoginFormCard() {
         setOtpTouched(false);
         setStatus({
           kind: "success",
-          message: data.message ?? `验证码已发送，请前往邮箱查看 ${EMAIL_OTP_LENGTH} 位数字验证码。`
+          message:
+            data.message ??
+            `登录邮件已发送，请查收 ${EMAIL_OTP_LENGTH} 位数字验证码；如果邮箱里显示的是确认按钮，直接点击也可以完成登录。`
         });
       } catch {
         setStatus({
@@ -203,7 +207,7 @@ export function LoginFormCard() {
     startTransition(async () => {
       setStatus({
         kind: "idle",
-        message: "正在验证邮箱验证码..."
+        message: "正在校验邮箱验证码..."
       });
 
       try {
@@ -264,8 +268,8 @@ export function LoginFormCard() {
       kind: "idle",
       message:
         cooldownSeconds > 0
-          ? `验证码已发送到 ${lastSentEmail}，请等待 ${cooldownSeconds} 秒后再重新发送。`
-          : "你可以修改邮箱，或重新发送一封新的验证码邮件。"
+          ? `登录邮件已发送到 ${lastSentEmail}，请等待 ${cooldownSeconds} 秒后再重新发送。`
+          : "你可以修改邮箱，或重新发送一封新的登录邮件。"
     });
   }
 
@@ -294,7 +298,7 @@ export function LoginFormCard() {
     verifyFormRef.current?.requestSubmit();
   }, [otpCode, step, isPending]);
 
-  const sendButtonLabel = isPending ? "发送中..." : cooldownSeconds > 0 ? `${cooldownSeconds}s 后可重发` : "发送验证码";
+  const sendButtonLabel = isPending ? "发送中..." : cooldownSeconds > 0 ? `${cooldownSeconds}s 后可重发` : "发送登录邮件";
   const verifyButtonLabel = isPending ? "验证中..." : "验证并登录";
   const sendDisabled =
     isPending ||
@@ -304,7 +308,6 @@ export function LoginFormCard() {
     cooldownSeconds > 0 ||
     trimmedEmail.length === 0 ||
     !emailValid;
-  const emailForDisplay = lastSentEmail || trimmedEmail;
 
   return (
     <section className="rounded-[30px] border border-white/80 bg-white/90 p-6 shadow-soft backdrop-blur sm:p-8">
@@ -312,7 +315,7 @@ export function LoginFormCard() {
         <div>
           <h2 className="font-display text-3xl text-ink">邮箱登录</h2>
           <p className="mt-3 max-w-md text-sm leading-7 text-muted">
-            输入工作邮箱并完成基础校验后获取验证码，再输入 {EMAIL_OTP_LENGTH} 位数字验证码完成登录。
+            输入工作邮箱并完成基础校验后获取登录邮件。正常情况下你会收到 {EMAIL_OTP_LENGTH} 位验证码；如果是首次使用，也可能收到确认链接。
           </p>
         </div>
         <div className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-black/10 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-muted sm:px-4">
@@ -324,7 +327,7 @@ export function LoginFormCard() {
       <div className="mt-6 space-y-2">
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.16em] text-muted">
           <span>登录进度</span>
-          <span>{step === "request-code" ? "填写邮箱" : "输入验证码"}</span>
+          <span>{step === "request-code" ? "填写邮箱" : "完成验证"}</span>
         </div>
         <div className="h-2 rounded-full bg-black/5">
           <div
@@ -355,7 +358,7 @@ export function LoginFormCard() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">发送前校验</p>
                 <p className="mt-2 font-display text-3xl leading-none text-ink sm:text-4xl">{captcha?.prompt ?? "校验题加载中..."}</p>
-                <p className="mt-3 text-xs leading-6 text-muted">输入正确的计算结果后，才会发送邮箱验证码。</p>
+                <p className="mt-3 text-xs leading-6 text-muted">输入正确的计算结果后，系统才会发送登录邮件。</p>
               </div>
               <button
                 className="inline-flex min-h-10 w-full shrink-0 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:w-auto"
@@ -375,15 +378,19 @@ export function LoginFormCard() {
             />
           </div>
 
+          <div className="rounded-3xl border border-sky-100 bg-sky-50/90 p-4 text-sm leading-7 text-sky-900">
+            登录提示：如果邮箱里收到的是“确认邮箱”按钮，而不是数字验证码，直接点击邮件中的按钮即可，系统会自动回到当前站点完成登录。
+          </div>
+
           {cooldownSeconds > 0 ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-700">
-              验证码已发送到 {lastSentEmail || "当前邮箱"}，请等待 {cooldownSeconds} 秒后再重新发送。
+              登录邮件已发送到 {lastSentEmail || "当前邮箱"}，请等待 {cooldownSeconds} 秒后再重新发送。
             </div>
           ) : null}
 
           <LoginStatus kind={status.kind} message={status.message} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/50 sm:px-5"
               disabled={sendDisabled}
@@ -395,19 +402,32 @@ export function LoginFormCard() {
               className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink sm:px-5"
               href={demoShareHref}
             >
-              <span className="sm:hidden">体验示例</span>
-              <span className="hidden sm:inline">体验示例项目</span>
+              体验示例项目
             </Link>
           </div>
         </form>
       ) : (
         <form className="mt-7 space-y-5" onSubmit={handleVerifyCode} ref={verifyFormRef}>
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/80 p-4 sm:p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">验证码已发送至</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-700">登录邮件已发送至</p>
             <p className="mt-2 text-base font-semibold text-ink sm:text-lg">{emailForDisplay}</p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              输入 {EMAIL_OTP_LENGTH} 位数字验证码后会自动尝试登录，也支持直接粘贴完整验证码。
+              如果邮件中显示的是 {EMAIL_OTP_LENGTH} 位数字验证码，请在下方输入；如果邮件中显示的是确认按钮，直接点击按钮即可完成登录，无需再手动输入。
             </p>
+          </div>
+
+          <div className="rounded-3xl border border-black/10 bg-white/72 p-4 sm:p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">两种登录方式都支持</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-black/[0.03] p-4">
+                <p className="text-sm font-semibold text-ink">方式 1：输入验证码</p>
+                <p className="mt-2 text-xs leading-6 text-muted">收到数字验证码后，粘贴或输入完整 {EMAIL_OTP_LENGTH} 位数字即可自动校验。</p>
+              </div>
+              <div className="rounded-2xl bg-black/[0.03] p-4">
+                <p className="text-sm font-semibold text-ink">方式 2：点击确认链接</p>
+                <p className="mt-2 text-xs leading-6 text-muted">首次使用某些邮箱时，可能收到确认按钮。点击后会自动跳回当前站点并登录。</p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -452,17 +472,17 @@ export function LoginFormCard() {
 
           {cooldownSeconds > 0 ? (
             <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted">
-              没有收到验证码？请等待 {cooldownSeconds} 秒后再重新发送。
+              还没收到邮件？请等待 {cooldownSeconds} 秒后再重新发送。
             </div>
           ) : (
             <div className="rounded-2xl border border-black/10 bg-black/[0.03] px-4 py-3 text-sm leading-6 text-muted">
-              没有收到验证码？你可以返回上一步修改邮箱，或重新发送一封新的验证码邮件。
+              还没收到邮件？你可以返回上一步修改邮箱，或重新发送一封新的登录邮件。
             </div>
           )}
 
           <LoginStatus kind={status.kind} message={status.message} />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <button
               className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/50 sm:px-5"
               disabled={isPending || otpCode.length !== EMAIL_OTP_LENGTH}
@@ -476,8 +496,7 @@ export function LoginFormCard() {
               onClick={handleBackToRequest}
               type="button"
             >
-              <span className="sm:hidden">修改 / 重发</span>
-              <span className="hidden sm:inline">修改邮箱 / 重发</span>
+              修改邮箱或重发
             </button>
           </div>
         </form>

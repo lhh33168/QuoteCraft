@@ -28,6 +28,9 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
 
   return (
     <AppShell
+      backHref="/"
+      backLabel="返回上一页"
+      eyebrow="项目工作台"
       title="项目工作台"
       description="优先展示待推进的方案、项目列表和快捷动作，让整个报价推进过程更顺手。"
       actions={

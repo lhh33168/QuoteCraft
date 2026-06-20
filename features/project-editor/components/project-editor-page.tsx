@@ -10,6 +10,9 @@ type ProjectEditorPageProps = {
 export function ProjectEditorPage({ mode, initialState }: ProjectEditorPageProps) {
   return (
     <AppShell
+      backHref="/workspace"
+      backLabel="返回工作台"
+      eyebrow={mode === "create" ? "新建项目" : "编辑项目"}
       title={mode === "create" ? "创建报价项目" : "编辑报价项目"}
       description="面向移动端的项目编辑工作区，基础信息、项目说明、报价项、AI 辅助和输出动作都在这里完成。"
     >

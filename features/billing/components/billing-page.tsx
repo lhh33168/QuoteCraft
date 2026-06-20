@@ -3,6 +3,9 @@ import { AppShell } from "@/shared/ui/app-shell";
 export function BillingPage() {
   return (
     <AppShell
+      backHref="/workspace"
+      backLabel="返回工作台"
+      eyebrow="订阅中心"
       title="订阅与权益"
       description="这里先放移动端 App 的订阅页骨架，后续再接免费版限制、专业版权益和升级引导。"
     >
