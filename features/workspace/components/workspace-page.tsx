@@ -51,19 +51,21 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
         </>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr] lg:gap-6">
-        <section className="rounded-[24px] border border-white/80 bg-white/80 p-5 sm:rounded-[28px] sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-6 lg:grid-cols-[1.45fr_0.8fr] lg:gap-7">
+        <section className="px-1 py-1 sm:px-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="font-display text-3xl text-ink">我的项目</h2>
-              <p className="mt-2 text-sm leading-7 text-muted">从这里继续编辑、分享，或者复用历史项目。</p>
+              <h2 className="font-display text-3xl text-ink sm:text-[2.1rem]">我的项目</h2>
+              <p className="mt-2 text-sm leading-7 text-muted">
+                从这里继续编辑、分享，或者复用历史项目。
+              </p>
             </div>
-            <div className="w-full sm:max-w-xs">
+            <div className="w-full sm:max-w-sm">
               <label className="sr-only" htmlFor="workspace-search">
                 搜索项目
               </label>
               <input
-                className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-pine/40 focus:ring-2 focus:ring-pine/10"
+                className="w-full rounded-[18px] border border-black/8 bg-white/88 px-4 py-3 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-pine/30 focus:bg-white focus:ring-2 focus:ring-pine/8"
                 id="workspace-search"
                 onChange={(event) => onSearchChange(event.target.value)}
                 placeholder="搜索项目名称 / 客户 / 公司 / 类型"
@@ -73,7 +75,9 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           </div>
 
           {notice ? (
-            <div className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">{notice}</div>
+            <div className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-700">
+              {notice}
+            </div>
           ) : null}
 
           <div className="mt-6 space-y-4">
@@ -85,8 +89,8 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
           </div>
         </section>
 
-        <aside className="space-y-6">
-          <section className="rounded-[24px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-5 text-white sm:rounded-[28px] sm:p-6">
+        <aside className="space-y-5">
+          <section className="rounded-[26px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-5 text-white sm:rounded-[30px] sm:p-6">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
               Today
             </div>
@@ -96,7 +100,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
             </p>
           </section>
 
-          <section className="rounded-[24px] border border-white/80 bg-white/80 p-5 sm:rounded-[28px] sm:p-6">
+          <section className="rounded-[24px] border border-white/80 bg-white/76 p-5 shadow-[0_18px_40px_rgba(19,33,29,0.05)] backdrop-blur-sm sm:rounded-[28px] sm:p-6">
             <h2 className="font-display text-3xl text-ink">快捷动作</h2>
             <div className="mt-5 grid gap-3">
               <Link
@@ -159,7 +163,7 @@ function ProjectCard({ project }: { project: Project }) {
   }
 
   return (
-    <article className="rounded-[24px] border border-black/5 bg-[#fcfaf5] p-5 transition hover:-translate-y-0.5">
+    <article className="rounded-[22px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(252,250,245,0.9))] p-4 shadow-[0_12px_28px_rgba(19,33,29,0.035)] transition hover:-translate-y-0.5 sm:rounded-[24px] sm:p-5">
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-ink">{project.title}</h3>
@@ -171,10 +175,12 @@ function ProjectCard({ project }: { project: Project }) {
           {project.status === "draft" ? "草稿" : project.status === "generated" ? "已生成" : "已分享"}
         </StatusBadge>
       </div>
+
       <div className="mt-4 flex flex-col gap-3 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
         <span>项目类型：{projectTypeLabelMap[project.projectType]}</span>
         <strong className="font-display text-2xl text-pine">{formatMoney(project.totalPrice)}</strong>
       </div>
+
       <div className="mt-5 flex flex-wrap gap-3">
         <Link
           className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold whitespace-nowrap text-white"
@@ -198,9 +204,11 @@ function ProjectCard({ project }: { project: Project }) {
           {isCopyPending ? "正在复制..." : "复制分享链接"}
         </button>
       </div>
+
       <div className="mt-4">
         <ProjectListActions projectId={project.id} />
       </div>
+
       {message ? <p className="mt-3 text-xs leading-6 text-muted">{message}</p> : null}
     </article>
   );
@@ -208,20 +216,22 @@ function ProjectCard({ project }: { project: Project }) {
 
 function EmptyState({ isSearching }: { isSearching: boolean }) {
   return (
-    <div className="rounded-[20px] border border-dashed border-black/10 bg-white/70 px-4 py-7 text-center sm:rounded-[24px] sm:px-5 sm:py-8">
+    <div className="rounded-[26px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(250,248,242,0.48))] px-5 py-9 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] sm:rounded-[28px] sm:px-6 sm:py-10">
       <h3 className="text-lg font-semibold text-ink">{isSearching ? "没有找到匹配项目" : "还没有项目"}</h3>
-      <p className="mt-2 text-sm leading-7 text-muted">
-        {isSearching ? "试试更换关键词，或者用客户名、公司名、项目类型继续搜索。" : "从一个新项目开始，或者先基于示例创建一份方案。"}
+      <p className="mx-auto mt-3 max-w-[26rem] text-sm leading-7 text-muted">
+        {isSearching
+          ? "试试更换关键词，或者用客户名、公司名、项目类型继续搜索。"
+          : "从一个新项目开始，或者先基于示例创建一份方案。"}
       </p>
-      <div className="mt-6 flex flex-wrap justify-center gap-3.5">
+      <div className="mt-7 flex flex-wrap justify-center gap-3">
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold whitespace-nowrap text-white"
+          className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-5 text-sm font-semibold whitespace-nowrap text-white"
           href="/projects/new"
         >
           新建项目
         </Link>
         <Link
-          className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold whitespace-nowrap text-ink"
+          className="inline-flex min-h-10 items-center justify-center rounded-full border border-black/8 bg-white/92 px-5 text-sm font-semibold whitespace-nowrap text-ink"
           href="/projects/new?template=education-site"
         >
           使用示例模板
