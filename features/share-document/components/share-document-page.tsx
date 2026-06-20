@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
@@ -33,18 +34,18 @@ export function ShareDocumentPage({
   isPrintMode = false,
   autoPrint = false
 }: ShareDocumentPageProps) {
+  const router = useRouter();
   const { project, quoteItems, token } = shareDocument;
   const [printMessage, setPrintMessage] = useState<string | null>(
-    autoPrint
-      ? "正在打开系统打印面板，请在系统面板中选择“保存为 PDF”或“另存为 PDF”。"
-      : null
+    autoPrint ? "正在打开系统打印面板，请稍候..." : null
   );
+  const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
   const sharePageHref = `/share/${token}` as Route;
   const printPageHref = `/share/${token}?print=1` as Route;
   const autoPrintHref = `/share/${token}?print=1&autoprint=1` as Route;
 
   function handlePrintDownload() {
-    setPrintMessage("系统打印面板已打开，请选择“保存为 PDF”或“另存为 PDF”下载到本地。");
+    setPrintMessage("系统打印面板已打开，请在面板中选择“保存为 PDF”或“另存为 PDF”下载到本地。");
     window.print();
   }
 
@@ -62,16 +63,20 @@ export function ShareDocumentPage({
   }, [isPrintMode, project.title]);
 
   useEffect(() => {
-    if (!isPrintMode || !autoPrint) {
+    if (!isPrintMode || !autoPrint || hasAutoPrinted) {
       return;
     }
 
+    // 去掉 autoprint 参数，避免刷新页面后重复自动弹出打印面板。
+    router.replace(printPageHref);
+
     const timer = window.setTimeout(() => {
+      setHasAutoPrinted(true);
       handlePrintDownload();
     }, 320);
 
     return () => window.clearTimeout(timer);
-  }, [autoPrint, isPrintMode]);
+  }, [autoPrint, hasAutoPrinted, isPrintMode, printPageHref, router]);
 
   useEffect(() => {
     if (!isPrintMode) {
@@ -79,7 +84,7 @@ export function ShareDocumentPage({
     }
 
     function handleAfterPrint() {
-      setPrintMessage("打印面板已关闭。你可以返回上一页，或再次点击“保存到本地 PDF”。");
+      setPrintMessage("打印面板已关闭。你可以返回分享页，或再次点击“保存到本地 PDF”。");
     }
 
     window.addEventListener("afterprint", handleAfterPrint);
@@ -91,7 +96,7 @@ export function ShareDocumentPage({
       {isPrintMode ? (
         <div className="sticky top-0 z-30 border-b border-black/6 bg-white/92 backdrop-blur-xl print:hidden">
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
                 href={sharePageHref}
@@ -109,12 +114,13 @@ export function ShareDocumentPage({
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
                 href={printPageHref}
               >
-                仅查看打印版
+                停留在打印版
               </Link>
             </div>
-            <div className="flex flex-col gap-2 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
-              <p>当前是打印版页面。保存到本地时，请在系统打印面板中选择“保存为 PDF”或“另存为 PDF”。</p>
-              {printMessage ? <p className="text-xs leading-6 text-pine">{printMessage}</p> : null}
+
+            <div className="rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-sm leading-7 text-sky-900">
+              <p>导出方式：点击“保存到本地 PDF”后，系统会打开打印面板，请在面板中选择“保存为 PDF”或“另存为 PDF”。</p>
+              {printMessage ? <p className="mt-2 text-xs leading-6 text-pine">{printMessage}</p> : null}
             </div>
           </div>
         </div>
@@ -228,7 +234,25 @@ export function ShareDocumentPage({
           </section>
         </section>
 
-        {isPrintMode ? null : (
+        {isPrintMode ? (
+          <div className="sticky bottom-0 z-20 mt-2 border-t border-black/6 bg-white/96 p-4 shadow-[0_-12px_30px_rgba(19,33,29,0.08)] lg:hidden print:hidden">
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
+                href={sharePageHref}
+              >
+                返回分享页
+              </Link>
+              <button
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold text-white"
+                onClick={handlePrintDownload}
+                type="button"
+              >
+                导出 PDF
+              </button>
+            </div>
+          </div>
+        ) : (
           <aside className="w-full shrink-0 lg:sticky lg:top-8 lg:w-[320px] print:hidden">
             <section className="rounded-[28px] border border-black/5 bg-white/92 p-6 shadow-soft backdrop-blur sm:p-7">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
