@@ -15,18 +15,18 @@ function mapCallbackError(errorMessage: string) {
   const normalized = errorMessage.toLowerCase();
 
   if (normalized.includes("expired")) {
-    return "登录邮件已过期，请返回登录页重新获取。";
+    return "邮件中的兜底验证信息已过期，请返回登录页重新获取验证码。";
   }
 
   if (normalized.includes("invalid")) {
-    return "登录邮件无效，请返回登录页重新获取。";
+    return "邮件中的兜底验证信息无效，请返回登录页重新获取验证码。";
   }
 
   if (normalized.includes("otp")) {
-    return "验证码或确认链接校验失败，请重新获取一封新的登录邮件。";
+    return "邮箱兜底验证失败，请回到登录页重新发送新的验证码邮件。";
   }
 
-  return "登录邮件验证失败，请返回登录页重试。";
+  return "邮件兜底验证失败，请返回登录页重新尝试验证码登录。";
 }
 
 export async function GET(request: NextRequest) {
