@@ -1,8 +1,8 @@
 export default function SharePageLoading() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)]">
-      <div className="app-safe-top sticky top-0 z-20 border-b border-black/6 bg-[#f7faf7] shadow-[0_10px_24px_rgba(19,33,29,0.05)]">
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+      <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-20">
+        <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 lg:px-8">
           <div className="h-10 w-10 animate-pulse rounded-[18px] bg-white shadow-[0_8px_20px_rgba(19,33,29,0.05)]" />
           <div className="min-w-0 flex-1">
             <div className="h-3 w-20 animate-pulse rounded-full bg-pine/10" />

@@ -51,8 +51,8 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
         </>
       }
     >
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
-        <section className="rounded-[28px] border border-white/80 bg-white/80 p-6">
+      <div className="grid gap-5 lg:grid-cols-[1.4fr_0.8fr] lg:gap-6">
+        <section className="rounded-[24px] border border-white/80 bg-white/80 p-5 sm:rounded-[28px] sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-display text-3xl text-ink">我的项目</h2>
@@ -86,7 +86,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
         </section>
 
         <aside className="space-y-6">
-          <section className="rounded-[28px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-6 text-white">
+          <section className="rounded-[24px] bg-gradient-to-br from-[#17344f] via-[#184d3f] to-[#2c7864] p-5 text-white sm:rounded-[28px] sm:p-6">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
               Today
             </div>
@@ -96,7 +96,7 @@ export function WorkspacePage({ projects, notice, searchValue, onSearchChange }:
             </p>
           </section>
 
-          <section className="rounded-[28px] border border-white/80 bg-white/80 p-6">
+          <section className="rounded-[24px] border border-white/80 bg-white/80 p-5 sm:rounded-[28px] sm:p-6">
             <h2 className="font-display text-3xl text-ink">快捷动作</h2>
             <div className="mt-5 grid gap-3">
               <Link
@@ -208,12 +208,12 @@ function ProjectCard({ project }: { project: Project }) {
 
 function EmptyState({ isSearching }: { isSearching: boolean }) {
   return (
-    <div className="rounded-[24px] border border-dashed border-black/10 bg-white/70 px-5 py-8 text-center">
+    <div className="rounded-[20px] border border-dashed border-black/10 bg-white/70 px-4 py-7 text-center sm:rounded-[24px] sm:px-5 sm:py-8">
       <h3 className="text-lg font-semibold text-ink">{isSearching ? "没有找到匹配项目" : "还没有项目"}</h3>
       <p className="mt-2 text-sm leading-7 text-muted">
         {isSearching ? "试试更换关键词，或者用客户名、公司名、项目类型继续搜索。" : "从一个新项目开始，或者先基于示例创建一份方案。"}
       </p>
-      <div className="mt-5 flex flex-wrap justify-center gap-3">
+      <div className="mt-6 flex flex-wrap justify-center gap-3.5">
         <Link
           className="inline-flex min-h-10 items-center justify-center rounded-full bg-pine px-4 text-sm font-semibold whitespace-nowrap text-white"
           href="/projects/new"

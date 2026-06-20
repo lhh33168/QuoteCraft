@@ -59,6 +59,22 @@ textarea {
   padding-bottom: var(--app-safe-bottom);
 }
 
+.app-top-bar {
+  border-bottom: 1px solid rgba(21, 34, 29, 0.08);
+  background: #f7faf7;
+  box-shadow: 0 10px 24px rgba(19, 33, 29, 0.05);
+}
+
+.app-top-bar-soft {
+  background: linear-gradient(180deg, #f9fbf8 0%, #f4f8f4 100%);
+  box-shadow: 0 10px 24px rgba(19, 33, 29, 0.04);
+}
+
+.app-top-bar-compact {
+  border-bottom-color: rgba(21, 34, 29, 0.06);
+  box-shadow: 0 8px 18px rgba(19, 33, 29, 0.04);
+}
+
 .app-safe-bottom-comfortable {
   padding-bottom: max(16px, calc(var(--app-safe-bottom) + 8px));
 }

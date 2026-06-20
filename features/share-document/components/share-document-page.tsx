@@ -109,8 +109,8 @@ export function ShareDocumentPage({
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
       {isPrintMode ? (
-        <div className="app-safe-top sticky top-0 z-30 border-b border-black/6 bg-[#f7faf7] shadow-[0_10px_24px_rgba(19,33,29,0.05)] print:hidden">
-          <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
+        <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-30 print:hidden">
+          <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-3 py-3 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Link
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
@@ -163,8 +163,8 @@ export function ShareDocumentPage({
           </div>
         </div>
       ) : (
-        <div className="app-safe-top sticky top-0 z-20 border-b border-black/6 bg-[#f7faf7] shadow-[0_10px_24px_rgba(19,33,29,0.05)] print:hidden">
-          <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="app-safe-top app-top-bar app-top-bar-compact sticky top-0 z-20 print:hidden">
+          <div className="mx-auto flex w-full max-w-7xl items-center gap-3 px-3 py-3 sm:px-6 lg:px-8">
             <PageBackButton
               fallbackHref={isLoggedIn ? "/workspace" : "/login"}
               label={isLoggedIn ? "返回工作台" : "返回登录"}
