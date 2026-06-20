@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import type { Route } from "next";
+import { useEffect, useState } from "react";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { PageBackButton } from "@/shared/ui/page-back-button";
@@ -12,10 +13,11 @@ type ShareDocumentPageProps = {
   };
   isLoggedIn: boolean;
   isPrintMode?: boolean;
+  autoPrint?: boolean;
 };
 
 const projectTypeLabelMap: Record<ProjectType, string> = {
-  website: "官网 / 品牌站",
+  website: "官网 / 品牌网站",
   mini_program: "微信小程序",
   admin_panel: "后台管理系统",
   custom: "定制开发"
@@ -25,24 +27,98 @@ function renderParagraph(value: string | null | undefined, fallback: string) {
   return value?.trim() ? value : fallback;
 }
 
-export function ShareDocumentPage({ document, isLoggedIn, isPrintMode = false }: ShareDocumentPageProps) {
-  const { project, quoteItems, token } = document;
+export function ShareDocumentPage({
+  document: shareDocument,
+  isLoggedIn,
+  isPrintMode = false,
+  autoPrint = false
+}: ShareDocumentPageProps) {
+  const { project, quoteItems, token } = shareDocument;
+  const [printMessage, setPrintMessage] = useState<string | null>(
+    autoPrint
+      ? "正在打开系统打印面板，请在系统面板中选择“保存为 PDF”或“另存为 PDF”。"
+      : null
+  );
+  const sharePageHref = `/share/${token}` as Route;
+  const printPageHref = `/share/${token}?print=1` as Route;
+  const autoPrintHref = `/share/${token}?print=1&autoprint=1` as Route;
+
+  function handlePrintDownload() {
+    setPrintMessage("系统打印面板已打开，请选择“保存为 PDF”或“另存为 PDF”下载到本地。");
+    window.print();
+  }
 
   useEffect(() => {
     if (!isPrintMode) {
       return;
     }
 
+    const previousTitle = window.document.title;
+    window.document.title = `${project.title || "报价方案"}-报价单`;
+
+    return () => {
+      window.document.title = previousTitle;
+    };
+  }, [isPrintMode, project.title]);
+
+  useEffect(() => {
+    if (!isPrintMode || !autoPrint) {
+      return;
+    }
+
     const timer = window.setTimeout(() => {
-      window.print();
-    }, 300);
+      handlePrintDownload();
+    }, 320);
 
     return () => window.clearTimeout(timer);
+  }, [autoPrint, isPrintMode]);
+
+  useEffect(() => {
+    if (!isPrintMode) {
+      return;
+    }
+
+    function handleAfterPrint() {
+      setPrintMessage("打印面板已关闭。你可以返回上一页，或再次点击“保存到本地 PDF”。");
+    }
+
+    window.addEventListener("afterprint", handleAfterPrint);
+    return () => window.removeEventListener("afterprint", handleAfterPrint);
   }, [isPrintMode]);
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(46,125,104,0.14),_transparent_36%),linear-gradient(180deg,#f6f1e8_0%,#f8f6f0_45%,#ffffff_100%)] print:bg-white">
-      {!isPrintMode ? (
+      {isPrintMode ? (
+        <div className="sticky top-0 z-30 border-b border-black/6 bg-white/92 backdrop-blur-xl print:hidden">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
+                href={sharePageHref}
+              >
+                返回分享页
+              </Link>
+              <button
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-pine px-4 text-sm font-semibold text-white"
+                onClick={handlePrintDownload}
+                type="button"
+              >
+                保存到本地 PDF
+              </button>
+              <Link
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-4 text-sm font-semibold text-ink"
+                href={printPageHref}
+              >
+                仅查看打印版
+              </Link>
+            </div>
+            <div className="flex flex-col gap-2 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+              <p>当前是打印版页面。保存到本地时，请在系统打印面板中选择“保存为 PDF”或“另存为 PDF”。</p>
+              {printMessage ? <p className="text-xs leading-6 text-pine">{printMessage}</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : (
         <div className="sticky top-0 z-20 border-b border-black/6 bg-white/82 backdrop-blur-xl print:hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
             <PageBackButton
@@ -61,21 +137,22 @@ export function ShareDocumentPage({ document, isLoggedIn, isPrintMode = false }:
             </Link>
           </div>
         </div>
-      ) : null}
+      )}
+
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:gap-8 lg:py-8 print:max-w-5xl print:px-0 print:py-0">
         <section className="flex-1 rounded-[32px] border border-black/5 bg-[#fffdfa]/95 p-6 shadow-soft backdrop-blur sm:p-8 print:rounded-none print:border-0 print:bg-white print:p-0 print:shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between print:hidden">
             <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pine/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-pine">
               <span>公开只读</span>
               <span className="h-1 w-1 rounded-full bg-pine/40" />
-              <span>{isPrintMode ? "打印视图" : "客户分享页"}</span>
+              <span>{isPrintMode ? "打印版页面" : "客户分享页"}</span>
             </div>
             <p className="text-xs leading-6 text-muted">分享标识：{token}</p>
           </div>
 
           {!isPrintMode ? (
             <div className="mt-6 rounded-[28px] border border-amber-200 bg-amber-50/90 p-4 text-sm leading-7 text-amber-800 sm:p-5 print:hidden">
-              当前页面用于客户查看方案详情与报价内容。若你需要归档或发送文件版，可以点击右侧“打印 / 保存为 PDF”导出。
+              当前页面用于客户查看方案详情与报价内容。如果你要导出 PDF，请点击右侧“保存到本地 PDF”，系统会打开打印面板供你保存。
             </div>
           ) : null}
 
@@ -106,10 +183,7 @@ export function ShareDocumentPage({ document, isLoggedIn, isPrintMode = false }:
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
-            <ContentBlock
-              title="原始需求摘要"
-              content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")}
-            />
+            <ContentBlock title="原始需求摘要" content={renderParagraph(project.rawRequirement, "暂无原始需求摘要。")} />
           </section>
 
           <section className="mt-8 border-t border-black/8 pt-6">
@@ -160,15 +234,21 @@ export function ShareDocumentPage({ document, isLoggedIn, isPrintMode = false }:
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-pine">输出动作</p>
               <h2 className="mt-3 font-display text-3xl leading-tight text-ink">把这份方案直接发给客户，或导出留档</h2>
               <p className="mt-4 text-sm leading-7 text-muted">
-                分享页适合快速查看，打印视图更适合保存为 PDF、发邮件或进入正式签约流程。
+                分享页适合快速查看，打印版更适合保存为 PDF、发邮件，或进入正式签约流程。
               </p>
 
               <div className="mt-6 space-y-3">
                 <Link
                   className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
-                  href={`/share/${token}?print=1`}
+                  href={autoPrintHref}
                 >
-                  打印 / 保存为 PDF
+                  保存到本地 PDF
+                </Link>
+                <Link
+                  className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
+                  href={printPageHref}
+                >
+                  打开打印版预览
                 </Link>
                 {isLoggedIn ? (
                   <>
