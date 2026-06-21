@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb } from "pdf-lib";
 import type { ProjectDetail, ProjectType, QuoteItem } from "@/shared/types/project";
@@ -18,6 +19,7 @@ const SOFT_FILL = rgb(0.98, 0.97, 0.94);
 const LINE = rgb(0.9, 0.89, 0.84);
 
 const CHINESE_FONT_CANDIDATES = [
+  path.join(process.cwd(), "server", "pdf", "fonts", "simhei.ttf"),
   "C:\\Windows\\Fonts\\simhei.ttf",
   "C:\\Windows\\Fonts\\simfang.ttf",
   "C:\\Windows\\Fonts\\simkai.ttf",
@@ -245,7 +247,7 @@ async function loadChineseFont(doc: PDFDocument) {
     }
   }
 
-  throw new Error("No Chinese PDF font available on server.");
+  throw new Error("PDF 导出失败：服务器缺少可用的中文字体文件。");
 }
 
 async function loadBodyFont(doc: PDFDocument) {

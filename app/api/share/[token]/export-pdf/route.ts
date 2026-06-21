@@ -32,13 +32,16 @@ export async function GET(request: Request, { params }: RouteProps) {
       }
     });
   } catch (error) {
+    const fallbackMessage = t("share.exportFailedMessage");
     const message =
       error instanceof BillingLimitError
         ? error.code === "EXPORT_PDF_DISABLED"
           ? t("api.billing.exportPdfDisabled")
           : error.message
         : error instanceof Error
-          ? error.message
+          ? error.message.includes("中文字体")
+            ? error.message
+            : fallbackMessage
           : t("share.exportDisabledDescription");
 
     return NextResponse.json(
