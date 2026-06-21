@@ -1,7 +1,13 @@
+import { Capacitor } from "@capacitor/core";
+import { Directory, Filesystem } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
+
 type DownloadedFile = {
   fileName: string;
   blob: Blob;
 };
+
+type DownloadMode = "browser-download" | "web-share" | "native-share";
 
 function getFileNameFromDisposition(disposition: string | null, fallbackFileName: string) {
   if (!disposition) {
@@ -43,6 +49,34 @@ async function extractDownloadedFile(response: Response, fallbackFileName: strin
   };
 }
 
+function sanitizeExportFileName(fileName: string) {
+  return fileName.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "-");
+}
+
+function blobToBase64(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(new Error("File conversion failed."));
+    };
+
+    reader.onloadend = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      const base64 = result.includes(",") ? result.slice(result.indexOf(",") + 1) : result;
+
+      if (!base64) {
+        reject(new Error("File conversion failed."));
+        return;
+      }
+
+      resolve(base64);
+    };
+
+    reader.readAsDataURL(blob);
+  });
+}
+
 function triggerBrowserDownload(file: DownloadedFile) {
   const objectUrl = window.URL.createObjectURL(file.blob);
   const link = window.document.createElement("a");
@@ -53,6 +87,46 @@ function triggerBrowserDownload(file: DownloadedFile) {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(objectUrl);
+}
+
+async function tryCapacitorShare(file: DownloadedFile, shareTitle?: string) {
+  if (!Capacitor.isNativePlatform()) {
+    return false;
+  }
+
+  if (!Capacitor.isPluginAvailable("Filesystem") || !Capacitor.isPluginAvailable("Share")) {
+    return false;
+  }
+
+  const exportPath = `exports/${Date.now()}-${sanitizeExportFileName(file.fileName)}`;
+  const base64 = await blobToBase64(file.blob);
+  const writeResult = await Filesystem.writeFile({
+    path: exportPath,
+    data: base64,
+    directory: Directory.Cache,
+    recursive: true
+  });
+  const fileUri =
+    writeResult.uri ||
+    (
+      await Filesystem.getUri({
+        path: exportPath,
+        directory: Directory.Cache
+      })
+    ).uri;
+  const shareSupport = await Share.canShare().catch(() => ({ value: false }));
+
+  if (!shareSupport.value) {
+    throw new Error("当前设备暂不支持文件分享，请稍后重试。");
+  }
+
+  await Share.share({
+    title: shareTitle ?? file.fileName,
+    dialogTitle: shareTitle ?? file.fileName,
+    files: [fileUri]
+  });
+
+  return true;
 }
 
 async function tryNativeShare(file: DownloadedFile, shareTitle?: string) {
@@ -98,14 +172,31 @@ export async function downloadFileFromResponse(
   }
 ) {
   const file = await extractDownloadedFile(response, fallbackFileName);
+  const nativeShared = options?.preferShare ? await tryCapacitorShare(file, options.shareTitle) : false;
+
+  if (nativeShared) {
+    return {
+      fileName: file.fileName,
+      shared: true,
+      mode: "native-share" as DownloadMode
+    };
+  }
+
   const shared = options?.preferShare ? await tryNativeShare(file, options.shareTitle) : false;
 
-  if (!shared) {
-    triggerBrowserDownload(file);
+  if (shared) {
+    return {
+      fileName: file.fileName,
+      shared: true,
+      mode: "web-share" as DownloadMode
+    };
   }
+
+  triggerBrowserDownload(file);
 
   return {
     fileName: file.fileName,
-    shared
+    shared: false,
+    mode: "browser-download" as DownloadMode
   };
 }

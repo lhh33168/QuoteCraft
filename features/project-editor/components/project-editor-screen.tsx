@@ -36,7 +36,7 @@ async function downloadPdfFile(url: string) {
   const response = await fetch(url, {
     method: "GET"
   });
-  await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+  return downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
     preferShare: true,
     shareTitle: "QuoteCraft Proposal PDF"
   });
@@ -95,7 +95,11 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
 
   async function startPdfDownload(projectId: string) {
     setNavigationState("print");
-    await downloadPdfFile(`/api/projects/${projectId}/export-pdf`);
+    const result = await downloadPdfFile(`/api/projects/${projectId}/export-pdf`);
+    setSaveState({
+      kind: "success",
+      message: result.mode === "native-share" ? t("editorScreen.savedAndOpenedNativeShare") : t("editorScreen.savedAndDownloadingPdf")
+    });
     resetNavigationStateSoon();
   }
 

@@ -77,12 +77,12 @@ export function ShareDocumentPage({
         method: "GET"
       });
 
-      await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+      const result = await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
         preferShare: true,
         shareTitle: project.title || "QuoteCraft Proposal PDF"
       });
       setExportState("done");
-      setExportMessage(t("share.exportFinishedMessage"));
+      setExportMessage(result.mode === "native-share" ? t("share.exportNativeShareFinishedMessage") : t("share.exportFinishedMessage"));
     } catch (error) {
       setExportState("idle");
       setExportMessage(error instanceof Error ? error.message : t("share.exportFailedMessage"));

@@ -21,6 +21,7 @@ function renderParagraph(value: string | null | undefined, fallback: string) {
 export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPageProps) {
   const { t } = useI18n();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState<string | null>(null);
 
   if (!detail) {
     return (
@@ -69,15 +70,19 @@ export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPa
 
   async function handleDownloadPdf() {
     setIsDownloading(true);
+    setDownloadMessage(null);
 
     try {
       const response = await fetch(`/api/projects/${project.id}/export-pdf`, {
         method: "GET"
       });
-      await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+      const result = await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
         preferShare: true,
         shareTitle: project.title || "QuoteCraft Proposal PDF"
       });
+      setDownloadMessage(result.mode === "native-share" ? t("share.exportNativeShareFinishedMessage") : t("share.exportFinishedMessage"));
+    } catch (error) {
+      setDownloadMessage(error instanceof Error ? error.message : t("share.exportFailedMessage"));
     } finally {
       setIsDownloading(false);
     }
@@ -106,6 +111,7 @@ export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPa
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">{t("print.guideEyebrow")}</p>
               <p className="mt-2 font-semibold text-ink">{t("print.guideTitle")}</p>
+              {downloadMessage ? <p className="mt-2 text-sm leading-6 text-sky-900">{downloadMessage}</p> : null}
             </div>
             <div className="flex flex-wrap gap-2">
               <button
