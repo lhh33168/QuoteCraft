@@ -1,21 +1,26 @@
 import { NextResponse } from "next/server";
-import { BillingLimitError } from "@/server/billing/billing-service";
+import { BillingLimitError, billingService } from "@/server/billing/billing-service";
 import { exportProjectPdf } from "@/server/pdf/export-project-pdf";
 import { projectService } from "@/server/services/project-service";
 import { createRequestTranslator } from "@/shared/i18n/server";
 
 type RouteProps = {
   params: Promise<{
-    id: string;
+    token: string;
   }>;
 };
 
 export async function GET(request: Request, { params }: RouteProps) {
   const { t } = createRequestTranslator(request);
-  const { id } = await params;
+  const { token } = await params;
 
   try {
-    const detail = await projectService.assertCurrentUserCanExportProject(id);
+    const { detail, billingAccess } = await projectService.getSharedProjectWithAccess(token);
+
+    if (!billingAccess.entitlements.exportPdfEnabled) {
+      throw new BillingLimitError("EXPORT_PDF_DISABLED", t("api.billing.exportPdfDisabled"));
+    }
+
     const pdf = await exportProjectPdf(detail);
 
     return new NextResponse(Buffer.from(pdf.bytes), {
@@ -34,7 +39,7 @@ export async function GET(request: Request, { params }: RouteProps) {
           : error.message
         : error instanceof Error
           ? error.message
-          : t("print.exportDisabledDescription");
+          : t("share.exportDisabledDescription");
 
     return NextResponse.json(
       {

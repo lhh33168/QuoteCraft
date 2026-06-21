@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useI18n } from "@/shared/i18n/i18n-provider";
 import { formatMessage } from "@/shared/i18n/format-message";
+import { downloadFileFromResponse } from "@/shared/lib/download-file";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { ButtonLoadingContent } from "@/shared/ui/button-loading-content";
@@ -40,17 +41,14 @@ export function ShareDocumentPage({
   const { project, quoteItems, token } = shareDocument;
   const sharePageHref = `/share/${token}` as Route;
   const printPageHref = `/share/${token}?print=1` as Route;
-  const autoPrintHref = `/share/${token}?print=1&autoprint=1` as Route;
+  const exportPdfHref = `/api/share/${token}/export-pdf` as Route;
   const workspaceHref = "/workspace" as Route;
   const loginHref = "/login" as Route;
   const loginWithNextHref = "/login?next=/workspace" as Route;
   const createProjectHref = "/projects/new" as Route;
-  const [exportState, setExportState] = useState<ExportState>(autoPrint ? "processing" : "idle");
+  const [exportState, setExportState] = useState<ExportState>("idle");
   const [navigationState, setNavigationState] = useState<NavigationState>("idle");
-  const [exportMessage, setExportMessage] = useState<string | null>(
-    autoPrint ? t("share.exportPreparingMessage") : null
-  );
-  const [hasAutoPrinted, setHasAutoPrinted] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
 
   const projectTypeLabelMap: Record<ProjectType, string> = {
     website: t("projectCard.website"),
@@ -64,17 +62,35 @@ export function ShareDocumentPage({
   function prefetchTargets() {
     router.prefetch(sharePageHref);
     router.prefetch(printPageHref);
-    router.prefetch(autoPrintHref);
     router.prefetch(workspaceHref);
     router.prefetch(loginHref);
     router.prefetch(loginWithNextHref);
     router.prefetch(createProjectHref);
   }
 
-  function handlePrintDownload() {
+  async function handlePdfDownload() {
     setExportState("processing");
     setExportMessage(t("share.exportPreparingMessage"));
-    window.print();
+
+    try {
+      const response = await fetch(exportPdfHref, {
+        method: "GET"
+      });
+
+      await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+        preferShare: true,
+        shareTitle: project.title || "QuoteCraft Proposal PDF"
+      });
+      setExportState("done");
+      setExportMessage(t("share.exportFinishedMessage"));
+    } catch (error) {
+      setExportState("idle");
+      setExportMessage(error instanceof Error ? error.message : t("share.exportFailedMessage"));
+    } finally {
+      if (!isPrintMode) {
+        setNavigationState("idle");
+      }
+    }
   }
 
   function handleNavigate(target: NavigationState, href: Route) {
@@ -104,33 +120,13 @@ export function ShareDocumentPage({
   }, [isPrintMode, project.title, t]);
 
   useEffect(() => {
-    if (!isPrintMode || !autoPrint || hasAutoPrinted) {
+    if (!isPrintMode || !autoPrint) {
       return;
     }
 
     router.replace(printPageHref);
-
-    const timer = window.setTimeout(() => {
-      setHasAutoPrinted(true);
-      handlePrintDownload();
-    }, 320);
-
-    return () => window.clearTimeout(timer);
-  }, [autoPrint, hasAutoPrinted, isPrintMode, printPageHref, router]);
-
-  useEffect(() => {
-    if (!isPrintMode) {
-      return;
-    }
-
-    function handleAfterPrint() {
-      setExportState("done");
-      setExportMessage(t("share.exportFinishedMessage"));
-    }
-
-    window.addEventListener("afterprint", handleAfterPrint);
-    return () => window.removeEventListener("afterprint", handleAfterPrint);
-  }, [isPrintMode, t]);
+    void handlePdfDownload();
+  }, [autoPrint, isPrintMode, printPageHref, router]);
 
   const exportButtonLabel =
     exportState === "processing" ? t("share.exportingPdf") : t("share.exportPdfToLocal");
@@ -285,7 +281,9 @@ export function ShareDocumentPage({
               <button
                 className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)] disabled:cursor-not-allowed disabled:bg-pine/60"
                 disabled={exportState === "processing"}
-                onClick={handlePrintDownload}
+                onClick={() => {
+                  void handlePdfDownload();
+                }}
                 type="button"
               >
                 {exportState === "processing" ? t("share.exportingPdf") : t("share.exportPdf")}
@@ -320,7 +318,10 @@ export function ShareDocumentPage({
                   <button
                     className="mt-3 inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-pine/55"
                     disabled={!exportPdfEnabled}
-                    onClick={() => handleNavigate("print", autoPrintHref)}
+                    onClick={() => {
+                      setNavigationState("print");
+                      void handlePdfDownload();
+                    }}
                     onFocus={prefetchTargets}
                     onMouseEnter={prefetchTargets}
                     onTouchStart={prefetchTargets}
@@ -456,7 +457,10 @@ export function ShareDocumentPage({
                 <button
                   className="inline-flex items-center justify-center rounded-[18px] bg-pine px-4 text-[15px] font-semibold text-white shadow-[0_10px_22px_rgba(24,77,63,0.16)] disabled:cursor-not-allowed disabled:bg-pine/55"
                   disabled={!exportPdfEnabled}
-                  onClick={() => handleNavigate("print", autoPrintHref)}
+                  onClick={() => {
+                    setNavigationState("print");
+                    void handlePdfDownload();
+                  }}
                   onFocus={prefetchTargets}
                   onMouseEnter={prefetchTargets}
                   onTouchStart={prefetchTargets}

@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import type { Route } from "next";
-import { useEffect } from "react";
+import { useState } from "react";
 import { useI18n } from "@/shared/i18n/i18n-provider";
+import { downloadFileFromResponse } from "@/shared/lib/download-file";
 import { formatMoney } from "@/shared/lib/format-money";
 import type { ProjectDetail, ProjectType } from "@/shared/types/project";
 import { PageBackButton } from "@/shared/ui/page-back-button";
@@ -19,6 +20,7 @@ function renderParagraph(value: string | null | undefined, fallback: string) {
 
 export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPageProps) {
   const { t } = useI18n();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   if (!detail) {
     return (
@@ -65,13 +67,21 @@ export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPa
     custom: t("projectCard.custom")
   };
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      window.print();
-    }, 300);
+  async function handleDownloadPdf() {
+    setIsDownloading(true);
 
-    return () => window.clearTimeout(timer);
-  }, []);
+    try {
+      const response = await fetch(`/api/projects/${project.id}/export-pdf`, {
+        method: "GET"
+      });
+      await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+        preferShare: true,
+        shareTitle: project.title || "QuoteCraft Proposal PDF"
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  }
 
   return (
     <main className="app-safe-bottom min-h-screen bg-[#f5f1e8] print:bg-white">
@@ -100,10 +110,13 @@ export function ProjectPrintPage({ detail, errorMessage = null }: ProjectPrintPa
             <div className="flex flex-wrap gap-2">
               <button
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full bg-pine px-5 text-sm font-semibold text-white"
-                onClick={() => window.print()}
+                disabled={isDownloading}
+                onClick={() => {
+                  void handleDownloadPdf();
+                }}
                 type="button"
               >
-                {t("print.printOrSavePdf")}
+                {isDownloading ? t("share.exportingPdf") : t("print.printOrSavePdf")}
               </button>
               <Link
                 className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"

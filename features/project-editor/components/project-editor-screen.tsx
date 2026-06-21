@@ -11,6 +11,7 @@ import { buildAiPayload } from "@/features/project-editor/lib/build-ai-payload";
 import { buildProjectDetailPayload } from "@/features/project-editor/lib/project-detail-payload";
 import { useI18n } from "@/shared/i18n/i18n-provider";
 import { formatMessage } from "@/shared/i18n/format-message";
+import { downloadFileFromResponse } from "@/shared/lib/download-file";
 import { formatDateTime } from "@/shared/lib/format-datetime";
 import { formatMoney } from "@/shared/lib/format-money";
 import { queryKeys } from "@/shared/lib/query-keys";
@@ -30,6 +31,16 @@ type ProjectEditorScreenProps = {
 type AiTarget = "summary" | "scope";
 type SaveTrigger = "manual" | "auto" | "export";
 type NavigationState = "idle" | "share" | "print" | "workspace";
+
+async function downloadPdfFile(url: string) {
+  const response = await fetch(url, {
+    method: "GET"
+  });
+  await downloadFileFromResponse(response, "QuoteCraft-Proposal.pdf", {
+    preferShare: true,
+    shareTitle: "QuoteCraft Proposal PDF"
+  });
+}
 
 export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
   const queryClient = useQueryClient();
@@ -75,7 +86,6 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
   const createdNoticeHandledRef = useRef(false);
   const workspaceHref = "/workspace" as Route;
   const shareRouteHref = detail.project.id ? (`/projects/${detail.project.id}/share` as Route) : null;
-  const printRouteHref = detail.project.id ? (`/projects/${detail.project.id}/print` as Route) : null;
 
   function resetNavigationStateSoon() {
     window.setTimeout(() => {
@@ -83,9 +93,9 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
     }, 1200);
   }
 
-  function openPrintPage(projectId: string) {
+  async function startPdfDownload(projectId: string) {
     setNavigationState("print");
-    window.open(`/projects/${projectId}/print`, "_blank", "noopener,noreferrer");
+    await downloadPdfFile(`/api/projects/${projectId}/export-pdf`);
     resetNavigationStateSoon();
   }
 
@@ -159,7 +169,7 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
       if (trigger === "export") {
         setSaveState({
           kind: "success",
-          message: t("editorScreen.savedAndOpeningExport")
+          message: t("editorScreen.savedAndDownloadingPdf")
         });
         return data;
       }
@@ -239,17 +249,25 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
 
   function handleExportPdf() {
     startExportTransition(async () => {
-      if (mode === "create" || dirty) {
-        const saved = await persistDetail("export");
+      try {
+        if (mode === "create" || dirty) {
+          const saved = await persistDetail("export");
 
-        if (saved?.project.id) {
-          openPrintPage(saved.project.id);
+          if (saved?.project.id) {
+            await startPdfDownload(saved.project.id);
+          }
+
+          return;
         }
 
-        return;
+        await startPdfDownload(detail.project.id);
+      } catch (error) {
+        setNavigationState("idle");
+        setSaveState({
+          kind: "error",
+          message: error instanceof Error ? error.message : t("editorScreen.exportPdfFailed")
+        });
       }
-
-      openPrintPage(detail.project.id);
     });
   }
 
@@ -385,10 +403,7 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
       router.prefetch(shareRouteHref);
     }
 
-    if (printRouteHref) {
-      router.prefetch(printRouteHref);
-    }
-  }, [printRouteHref, router, shareRouteHref, workspaceHref]);
+  }, [router, shareRouteHref, workspaceHref]);
 
   useEffect(() => {
     const created = searchParams.get("created");
@@ -676,21 +691,6 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
                 className="hidden min-h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full bg-pine px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70 lg:inline-flex"
                 disabled={actionDisabled}
                 onClick={handleExportPdf}
-                onFocus={() => {
-                  if (printRouteHref) {
-                    router.prefetch(printRouteHref);
-                  }
-                }}
-                onMouseEnter={() => {
-                  if (printRouteHref) {
-                    router.prefetch(printRouteHref);
-                  }
-                }}
-                onTouchStart={() => {
-                  if (printRouteHref) {
-                    router.prefetch(printRouteHref);
-                  }
-                }}
                 type="button"
               >
                 <span className="inline-flex items-center gap-2">
@@ -796,21 +796,6 @@ export function ProjectEditorScreen({ mode, store }: ProjectEditorScreenProps) {
             className="inline-flex items-center justify-center rounded-[18px] border border-black/8 bg-white/94 px-4 text-[15px] font-semibold text-ink shadow-[0_8px_18px_rgba(19,33,29,0.05)] disabled:cursor-not-allowed disabled:bg-black/[0.03] disabled:text-muted"
             disabled={actionDisabled}
             onClick={handleExportPdf}
-            onFocus={() => {
-              if (printRouteHref) {
-                router.prefetch(printRouteHref);
-              }
-            }}
-            onMouseEnter={() => {
-              if (printRouteHref) {
-                router.prefetch(printRouteHref);
-              }
-            }}
-            onTouchStart={() => {
-              if (printRouteHref) {
-                router.prefetch(printRouteHref);
-              }
-            }}
             type="button"
           >
             <span className="inline-flex items-center gap-2">
