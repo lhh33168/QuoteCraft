@@ -1,7 +1,6 @@
 import fs from "node:fs/promises";
-import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import type { ProjectDetail, ProjectType, QuoteItem } from "@/shared/types/project";
 
 const PAGE_WIDTH = 595.28;
@@ -237,7 +236,7 @@ async function readFontFile(fontPath: string) {
   }
 }
 
-async function loadBodyFont(doc: PDFDocument) {
+async function loadChineseFont(doc: PDFDocument) {
   for (const candidate of CHINESE_FONT_CANDIDATES) {
     const data = await readFontFile(candidate);
 
@@ -246,19 +245,15 @@ async function loadBodyFont(doc: PDFDocument) {
     }
   }
 
-  return doc.embedFont(StandardFonts.Helvetica);
+  throw new Error("No Chinese PDF font available on server.");
+}
+
+async function loadBodyFont(doc: PDFDocument) {
+  return loadChineseFont(doc);
 }
 
 async function loadHeadingFont(doc: PDFDocument) {
-  for (const candidate of CHINESE_FONT_CANDIDATES) {
-    const data = await readFontFile(candidate);
-
-    if (data) {
-      return doc.embedFont(data, { subset: true });
-    }
-  }
-
-  return doc.embedFont(StandardFonts.HelveticaBold);
+  return loadChineseFont(doc);
 }
 
 function buildFileName(detail: ProjectDetail) {
@@ -496,29 +491,26 @@ export async function exportProjectPdf(detail: ProjectDetail) {
     color: PINE
   });
 
-  drawTextBlock(
-    { ...ctx, y: ctx.y - 70 },
-    `交付说明：${fallbackText(detail.project.deliveryNote, "暂无交付说明。")}`,
-    {
-      x: PAGE_MARGIN_X + 18,
-      size: 10.5,
-      lineHeight: 15,
-      color: MUTED,
-      maxWidth: CONTENT_WIDTH - 36
-    }
-  );
+  const noteCtx: DrawContext = {
+    ...ctx,
+    y: ctx.y - 70
+  };
 
-  drawTextBlock(
-    { ...ctx, y: ctx.y - 86 },
-    `备注：${fallbackText(detail.project.remark, "暂无备注。")}`,
-    {
-      x: PAGE_MARGIN_X + 18,
-      size: 10.5,
-      lineHeight: 15,
-      color: MUTED,
-      maxWidth: CONTENT_WIDTH - 36
-    }
-  );
+  drawTextBlock(noteCtx, `交付说明：${fallbackText(detail.project.deliveryNote, "暂无交付说明。")}`, {
+    x: PAGE_MARGIN_X + 18,
+    size: 10.5,
+    lineHeight: 15,
+    color: MUTED,
+    maxWidth: CONTENT_WIDTH - 36
+  });
+
+  drawTextBlock(noteCtx, `备注：${fallbackText(detail.project.remark, "暂无备注。")}`, {
+    x: PAGE_MARGIN_X + 18,
+    size: 10.5,
+    lineHeight: 15,
+    color: MUTED,
+    maxWidth: CONTENT_WIDTH - 36
+  });
 
   const pdfBytes = await doc.save();
 
