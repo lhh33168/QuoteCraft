@@ -36,8 +36,7 @@ export function LoginSessionRedirect() {
         }
 
         if (data.auth?.session?.exists || data.auth?.user?.exists) {
-          router.replace("/workspace" as Route);
-          router.refresh();
+          window.location.assign("/workspace" as Route);
           return;
         }
 

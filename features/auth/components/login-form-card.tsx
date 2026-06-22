@@ -43,6 +43,10 @@ function wait(ms: number) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
+function navigateTo(path: Route) {
+  window.location.assign(path);
+}
+
 export function LoginFormCard() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -275,8 +279,7 @@ export function LoginFormCard() {
         const sessionReady = await waitForSessionReady();
 
         if (sessionReady) {
-          router.replace(next);
-          router.refresh();
+          navigateTo(next);
           return;
         }
 
