@@ -17,6 +17,17 @@ type LoginApiPayload = {
   retryAfterSeconds?: number;
 };
 
+type SessionProbeResponse = {
+  auth?: {
+    session?: {
+      exists?: boolean;
+    };
+    user?: {
+      exists?: boolean;
+    };
+  };
+};
+
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
@@ -26,6 +37,10 @@ function formatMessage(template: string, values: Record<string, string | number>
     (result, [key, value]) => result.replaceAll(`{${key}}`, String(value)),
     template
   );
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 export function LoginFormCard() {
@@ -128,6 +143,24 @@ export function LoginFormCard() {
     router.prefetch(demoShareHref);
     router.prefetch(next);
   }, [demoShareHref, next, router]);
+
+  async function waitForSessionReady() {
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const response = await fetch("/api/auth/session", {
+        credentials: "include",
+        cache: "no-store"
+      });
+      const data = (await response.json().catch(() => ({}))) as SessionProbeResponse;
+
+      if (data.auth?.session?.exists || data.auth?.user?.exists) {
+        return true;
+      }
+
+      await wait(350);
+    }
+
+    return false;
+  }
 
   async function handleSendCode(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -238,7 +271,19 @@ export function LoginFormCard() {
           kind: "success",
           message: data.message ?? t("login.statusLoginSuccess")
         });
-        router.push(next);
+
+        const sessionReady = await waitForSessionReady();
+
+        if (sessionReady) {
+          router.replace(next);
+          router.refresh();
+          return;
+        }
+
+        setStatus({
+          kind: "error",
+          message: t("login.statusSessionPending")
+        });
       } catch {
         setStatus({
           kind: "error",

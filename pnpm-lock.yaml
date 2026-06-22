@@ -12,11 +12,11 @@ importers:
         specifier: ^7.4.2
         version: 7.6.6
       '@capacitor/filesystem':
-        specifier: ^8.1.2
-        version: 8.1.2(@capacitor/core@7.6.6)
+        specifier: ^7.1.8
+        version: 7.1.8(@capacitor/core@7.6.6)
       '@capacitor/share':
-        specifier: ^8.0.1
-        version: 8.0.1(@capacitor/core@7.6.6)
+        specifier: ^7.0.4
+        version: 7.0.4(@capacitor/core@7.6.6)
       '@pdf-lib/fontkit':
         specifier: ^1.1.1
         version: 1.1.1
@@ -104,20 +104,20 @@ packages:
   '@capacitor/core@7.6.6':
     resolution: {integrity: sha512-TCxNTpi9bWlM31n8hkLKGrugDGcgJpSqafpDoEEn/Hj6KWxjxes7m0ASfrZ2pOmsqMNGjE6bYGZr905CueVAIw==}
 
-  '@capacitor/filesystem@8.1.2':
-    resolution: {integrity: sha512-doaaMfGoFR2hWU6aV6u83I+5ZsGyJVq+Gz4r9lMpJzUKMm1eMu0hLnFdV1aXZlU9FlK/RndFrVD8oRZfNOqWgQ==}
+  '@capacitor/filesystem@7.1.8':
+    resolution: {integrity: sha512-Qpw/2SE4/CzqAUvGgSM9hw/uXQ5qoOaF4wxbToXwpAaKPS+tzletS1h5ti3jjLmGcqizTs2sEXMtcsARW/Ceew==}
     peerDependencies:
-      '@capacitor/core': '>=8.0.0'
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/ios@7.6.6':
     resolution: {integrity: sha512-IjryNsqjYTs+YbVeIg/hpwgKtbEIMcUOblr75pdNSuE4bA++CgO2avqQi0cyviUHoaSa7e8L2hqvwNzghfor6g==}
     peerDependencies:
       '@capacitor/core': ^7.6.0
 
-  '@capacitor/share@8.0.1':
-    resolution: {integrity: sha512-3cSBKBCJVon54rKDROP2rqGyeGks4pBh9TbaEk9S375Kbek/ZHe72N50zIa0Vn9Eac/SuhwgehO/mmA4CsUOiw==}
+  '@capacitor/share@7.0.4':
+    resolution: {integrity: sha512-wNXxmXUcChrtbZ5jQv8scFIbIGKo3rk6B7qpWySxfUhYJP5NANgAqQ9Z69m0k/zYsucdh66SBU7XW1ykd9aUug==}
     peerDependencies:
-      '@capacitor/core': '>=8.0.0'
+      '@capacitor/core': '>=7.0.0'
 
   '@capacitor/synapse@1.0.4':
     resolution: {integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==}
@@ -1225,7 +1225,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/filesystem@8.1.2(@capacitor/core@7.6.6)':
+  '@capacitor/filesystem@7.1.8(@capacitor/core@7.6.6)':
     dependencies:
       '@capacitor/core': 7.6.6
       '@capacitor/synapse': 1.0.4
@@ -1234,7 +1234,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.6
 
-  '@capacitor/share@8.0.1(@capacitor/core@7.6.6)':
+  '@capacitor/share@7.0.4(@capacitor/core@7.6.6)':
     dependencies:
       '@capacitor/core': 7.6.6
 

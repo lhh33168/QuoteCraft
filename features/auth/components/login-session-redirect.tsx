@@ -21,6 +21,7 @@ export function LoginSessionRedirect() {
 
   useEffect(() => {
     let cancelled = false;
+    let timer: number | null = null;
 
     async function checkSession() {
       try {
@@ -36,9 +37,21 @@ export function LoginSessionRedirect() {
 
         if (data.auth?.session?.exists || data.auth?.user?.exists) {
           router.replace("/workspace" as Route);
+          router.refresh();
+          return;
         }
+
+        timer = window.setTimeout(() => {
+          void checkSession();
+        }, 800);
       } catch {
-        // Ignore session probing failures on login page.
+        if (cancelled) {
+          return;
+        }
+
+        timer = window.setTimeout(() => {
+          void checkSession();
+        }, 1200);
       }
     }
 
@@ -46,6 +59,10 @@ export function LoginSessionRedirect() {
 
     return () => {
       cancelled = true;
+
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
     };
   }, [router]);
 

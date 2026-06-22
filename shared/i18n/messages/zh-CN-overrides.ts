@@ -131,7 +131,8 @@ const zhCNOverrides: DeepPartial<Messages> = {
   },
   login: {
     verifyCooldown: "\u8bf7\u5728 {seconds} \u79d2\u540e\u91cd\u8bd5",
-    verifyRetryAfter: "\u9a8c\u8bc1\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf7\u7b49\u5f85 {seconds} \u79d2\u540e\u518d\u6b21\u5c1d\u8bd5\u3002"
+    verifyRetryAfter: "\u9a8c\u8bc1\u8fc7\u4e8e\u9891\u7e41\uff0c\u8bf7\u7b49\u5f85 {seconds} \u79d2\u540e\u518d\u6b21\u5c1d\u8bd5\u3002",
+    statusSessionPending: "\u767b\u5f55\u5df2\u6210\u529f\uff0c\u4f46\u4f1a\u8bdd\u4ecd\u5728\u540c\u6b65\u4e2d\uff0c\u8bf7\u7a0d\u7b49\u7247\u523b\u518d\u8bd5\u3002"
   },
   api: {
     billing: {

@@ -313,6 +313,7 @@ const en = {
     statusVerifying: "Verifying email code...",
     statusVerifyFailed: "Code verification failed. Please try again later.",
     statusLoginSuccess: "Login successful. Entering workspace...",
+    statusSessionPending: "Login succeeded, but the session is still syncing. Please wait a moment and try again.",
     statusInvalidEmail: "Please enter a valid email address.",
     statusCooldown: "Please wait {seconds} seconds before sending again.",
     statusFullCode: "Please enter the full {length}-digit verification code.",
