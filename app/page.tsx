@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { MealWheelPage } from "@/features/meal-wheel/components/meal-wheel-page";
 
 export const metadata: Metadata = {
-  title: "自己做饭 | QuoteCraft",
-  description: "先决定早餐、午餐、晚餐做什么，再生成自己的买菜清单。"
+  title: "做饭清单 | QuoteCraft",
+  description: "像点外卖一样挑选早中晚想做的菜，再统一查看买菜清单。"
 };
 
 export default function HomePage() {

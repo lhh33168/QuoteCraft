@@ -7,6 +7,7 @@ type MealSlot = "breakfast" | "lunch" | "dinner";
 type MealInputs = Record<MealSlot, string>;
 type CartState = Record<string, number>;
 type CheckedIngredients = Record<string, boolean>;
+type CustomGroceryState = Record<string, number>;
 
 type Dish = {
   id: string;
@@ -17,6 +18,7 @@ type Dish = {
   tag: string;
   description: string;
   ingredients: string[];
+  cookNote: string;
 };
 
 const STORAGE_KEY = "quotecraft-home-cooking";
@@ -66,6 +68,12 @@ const dishDescriptions = [
   "思路简单，买完菜就能开做。",
   "适合工作日，不想太折腾时做。",
   "配菜弹性大，冰箱里有什么就能改。"
+];
+const cookNotes = [
+  "先把主料和配菜都洗切好，下锅时会轻松很多。",
+  "这道菜适合一次多备一点，第二天热一下也能吃。",
+  "如果今天赶时间，可以先把食材分装好再开火。",
+  "口味可以边做边调，不用一次下太重。"
 ];
 
 const keywordIngredientMap: Array<{ keyword: string; ingredients: string[] }> = [
@@ -121,7 +129,8 @@ function createDish(slot: MealSlot, name: string, index: number): Dish {
     difficulty: index % 3 === 0 ? "简单" : index % 3 === 1 ? "普通" : "稍微费点工夫",
     tag: dishTags[(index + name.length) % dishTags.length],
     description: dishDescriptions[(index + name.length) % dishDescriptions.length],
-    ingredients: getDishIngredients(name)
+    ingredients: getDishIngredients(name),
+    cookNote: cookNotes[(index + name.length) % cookNotes.length]
   };
 }
 
@@ -129,11 +138,16 @@ export function MealWheelPage() {
   const [mealInputs, setMealInputs] = useState<MealInputs>(defaultInputs);
   const [cart, setCart] = useState<CartState>({});
   const [checkedIngredients, setCheckedIngredients] = useState<CheckedIngredients>({});
+  const [customGrocery, setCustomGrocery] = useState<CustomGroceryState>({});
   const [activeMeal, setActiveMeal] = useState<MealSlot>("lunch");
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [isHydrated, setIsHydrated] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [detailDish, setDetailDish] = useState<Dish | null>(null);
+  const [detailServings, setDetailServings] = useState(1);
+  const [customIngredientInput, setCustomIngredientInput] = useState("");
+  const modalOpen = cartOpen || detailDish !== null;
 
   useEffect(() => {
     try {
@@ -144,6 +158,7 @@ export function MealWheelPage() {
           mealInputs: MealInputs;
           cart: CartState;
           checkedIngredients: CheckedIngredients;
+          customGrocery: CustomGroceryState;
         }>;
 
         if (parsed.mealInputs) {
@@ -160,6 +175,10 @@ export function MealWheelPage() {
 
         if (parsed.checkedIngredients) {
           setCheckedIngredients(parsed.checkedIngredients);
+        }
+
+        if (parsed.customGrocery) {
+          setCustomGrocery(parsed.customGrocery);
         }
       }
     } catch {
@@ -179,10 +198,28 @@ export function MealWheelPage() {
       JSON.stringify({
         mealInputs,
         cart,
-        checkedIngredients
+        checkedIngredients,
+        customGrocery
       })
     );
-  }, [cart, checkedIngredients, isHydrated, mealInputs]);
+  }, [cart, checkedIngredients, customGrocery, isHydrated, mealInputs]);
+
+  useEffect(() => {
+    if (!modalOpen) {
+      return;
+    }
+
+    const previousBodyOverflow = window.document.body.style.overflow;
+    const previousHtmlOverflow = window.document.documentElement.style.overflow;
+
+    window.document.body.style.overflow = "hidden";
+    window.document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      window.document.body.style.overflow = previousBodyOverflow;
+      window.document.documentElement.style.overflow = previousHtmlOverflow;
+    };
+  }, [modalOpen]);
 
   const catalog = (Object.keys(mealConfig) as MealSlot[]).reduce<Record<MealSlot, Dish[]>>(
     (result, slot) => {
@@ -232,18 +269,31 @@ export function MealWheelPage() {
     }
   );
 
-  const groceryMap = new Map<string, number>();
+  const emptyMealSlots = (Object.keys(selectedCountByMeal) as MealSlot[]).filter((slot) => selectedCountByMeal[slot] === 0);
+
+  const autoGroceryMap = new Map<string, number>();
 
   for (const item of cartItems) {
     for (const ingredient of item.dish.ingredients) {
-      groceryMap.set(ingredient, (groceryMap.get(ingredient) ?? 0) + item.count);
+      autoGroceryMap.set(ingredient, (autoGroceryMap.get(ingredient) ?? 0) + item.count);
+    }
+  }
+
+  const groceryMap = new Map<string, number>(autoGroceryMap);
+
+  for (const [name, count] of Object.entries(customGrocery)) {
+    if (count > 0) {
+      groceryMap.set(name, (groceryMap.get(name) ?? 0) + count);
     }
   }
 
   const groceryItems = Array.from(groceryMap.entries()).map(([name, count]) => ({
     name,
-    count
+    count,
+    autoCount: autoGroceryMap.get(name) ?? 0,
+    customCount: customGrocery[name] ?? 0
   }));
+
   const checkedCount = groceryItems.filter((item) => checkedIngredients[item.name]).length;
 
   function updateMealInput(slot: MealSlot, value: string) {
@@ -279,6 +329,7 @@ export function MealWheelPage() {
   function clearCart() {
     setCart({});
     setCheckedIngredients({});
+    setCustomGrocery({});
   }
 
   function toggleIngredient(name: string) {
@@ -288,9 +339,51 @@ export function MealWheelPage() {
     }));
   }
 
+  function openDishDetail(dish: Dish) {
+    setDetailDish(dish);
+    setDetailServings(1);
+  }
+
+  function addDishFromDetail() {
+    if (!detailDish) {
+      return;
+    }
+
+    changeCartCount(detailDish.id, (cart[detailDish.id] ?? 0) + detailServings);
+  }
+
+  function addCustomIngredient() {
+    const name = customIngredientInput.trim();
+
+    if (!name) {
+      return;
+    }
+
+    setCustomGrocery((current) => ({
+      ...current,
+      [name]: (current[name] ?? 0) + 1
+    }));
+    setCustomIngredientInput("");
+  }
+
+  function changeCustomGroceryCount(name: string, nextCount: number) {
+    setCustomGrocery((current) => {
+      if (nextCount <= 0) {
+        const nextState = { ...current };
+        delete nextState[name];
+        return nextState;
+      }
+
+      return {
+        ...current,
+        [name]: nextCount
+      };
+    });
+  }
+
   return (
     <>
-      <main className="min-h-screen px-3 py-4 sm:px-5 lg:px-8">
+      <main className="min-h-screen px-3 py-4 pb-32 sm:px-5 sm:pb-36 lg:px-8">
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
           <section className="overflow-hidden rounded-[34px] bg-[linear-gradient(135deg,#f7c27b_0%,#ef8f5a_35%,#f6d9a2_100%)] text-white shadow-[0_26px_80px_rgba(227,124,66,0.24)]">
             <div className="px-5 py-5 sm:px-7 sm:py-6">
@@ -303,7 +396,7 @@ export function MealWheelPage() {
                   </div>
                   <h1 className="mt-4 font-display text-3xl leading-tight sm:text-4xl">像点外卖一样选菜，然后自己去买菜做饭</h1>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-white/84 sm:text-base">
-                    左边切早中晚分类，中间把想做的菜加入清单，底部再弹出一个购物车风格的窗口统一看份数和买菜列表。
+                    左边切早中晚分类，中间先看菜品详情再加入清单，底部和右下角都能打开一个购物车风格的清单弹窗。
                   </p>
                 </div>
 
@@ -314,7 +407,7 @@ export function MealWheelPage() {
                 </div>
               </div>
 
-              <div className="mt-5">
+              <div className="mt-5 space-y-3">
                 <label className="flex min-h-14 items-center gap-3 rounded-[22px] bg-white px-4 text-ink shadow-[0_14px_30px_rgba(130,48,10,0.08)]">
                   <span className="text-lg">搜</span>
                   <input
@@ -324,12 +417,18 @@ export function MealWheelPage() {
                     value={search}
                   />
                 </label>
+
+                <div className="rounded-[22px] bg-white/18 px-4 py-3 text-sm text-white/92 backdrop-blur">
+                  {emptyMealSlots.length > 0
+                    ? `还差 ${emptyMealSlots.length} 个餐段没安排：${emptyMealSlots.map((slot) => mealConfig[slot].label).join("、")}`
+                    : "今天三餐都已经安排上了，可以开始按清单买菜。"}
+                </div>
               </div>
             </div>
           </section>
 
           <section className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_320px]">
-            <aside className="rounded-[32px] border border-black/5 bg-white/90 p-3 shadow-soft backdrop-blur sm:p-4">
+            <aside className="rounded-[32px] border border-black/5 bg-white/90 p-3 shadow-soft backdrop-blur sm:p-4 lg:sticky lg:top-4 lg:self-start">
               <div className="px-2 pb-3 pt-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">分类</p>
                 <h2 className="mt-2 text-xl font-semibold text-ink">早中晚菜单</h2>
@@ -390,7 +489,7 @@ export function MealWheelPage() {
                         key={dish.id}
                       >
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
+                          <button className="min-w-0 flex-1 text-left" onClick={() => openDishDetail(dish)} type="button">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-xl font-semibold text-ink">{dish.name}</h3>
                               <span
@@ -404,30 +503,40 @@ export function MealWheelPage() {
                             <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted">
                               <span>准备 {dish.prepTime}</span>
                               <span>难度 {dish.difficulty}</span>
-                              <span>{dish.ingredients.join(" · ")}</span>
+                              <span>点开看详情</span>
                             </div>
-                          </div>
+                          </button>
 
-                          {count > 0 ? (
-                            <div className="flex items-center gap-3 rounded-full bg-ink px-3 py-2 text-white">
-                              <button className="text-lg" onClick={() => changeCartCount(dish.id, count - 1)} type="button">
-                                -
-                              </button>
-                              <span className="min-w-8 text-center text-sm font-semibold">{count} 份</span>
-                              <button className="text-lg" onClick={() => changeCartCount(dish.id, count + 1)} type="button">
-                                +
-                              </button>
-                            </div>
-                          ) : (
+                          <div className="flex flex-wrap items-center gap-2">
                             <button
-                              className="rounded-full px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(21,33,29,0.14)]"
-                              onClick={() => changeCartCount(dish.id, 1)}
-                              style={{ backgroundColor: activeConfig.accent }}
+                              className="rounded-full border border-black/8 bg-white px-4 py-2 text-sm font-semibold text-ink"
+                              onClick={() => openDishDetail(dish)}
                               type="button"
                             >
-                              加入清单
+                              查看详情
                             </button>
-                          )}
+
+                            {count > 0 ? (
+                              <div className="flex items-center gap-3 rounded-full bg-ink px-3 py-2 text-white">
+                                <button className="text-lg" onClick={() => changeCartCount(dish.id, count - 1)} type="button">
+                                  -
+                                </button>
+                                <span className="min-w-8 text-center text-sm font-semibold">{count} 份</span>
+                                <button className="text-lg" onClick={() => changeCartCount(dish.id, count + 1)} type="button">
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                className="rounded-full px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(21,33,29,0.14)]"
+                                onClick={() => changeCartCount(dish.id, 1)}
+                                style={{ backgroundColor: activeConfig.accent }}
+                                type="button"
+                              >
+                                加入清单
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </article>
                     );
@@ -448,9 +557,7 @@ export function MealWheelPage() {
                 </div>
                 <button
                   className="rounded-full bg-black/[0.05] px-4 py-2 text-sm font-semibold text-ink"
-                  onClick={() => {
-                    resetMealInput(activeMeal);
-                  }}
+                  onClick={() => resetMealInput(activeMeal)}
                   type="button"
                 >
                   恢复当前分类
@@ -496,11 +603,25 @@ export function MealWheelPage() {
         </div>
       </main>
 
+      <button
+        className="fixed bottom-28 right-4 z-30 hidden h-16 w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#15211d_0%,#2f6fed_100%)] text-white shadow-[0_20px_40px_rgba(21,33,29,0.3)] lg:flex"
+        onClick={() => setCartOpen(true)}
+        type="button"
+      >
+        <span className="text-center text-xs font-semibold leading-5">
+          清单
+          <br />
+          {cartCount}
+        </span>
+      </button>
+
       <div className="app-safe-bottom fixed bottom-0 left-0 right-0 z-30 px-3 pb-3">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between rounded-[26px] bg-[#15211d] px-4 py-3 text-white shadow-[0_20px_40px_rgba(21,33,29,0.3)]">
           <div>
             <p className="text-xs text-white/64">已加入 {distinctDishCount} 道菜 · 共 {cartCount} 份</p>
-            <p className="mt-1 text-lg font-semibold">{groceryItems.length > 0 ? `待买 ${groceryItems.length} 样食材` : "先选几道菜"}</p>
+            <p className="mt-1 text-lg font-semibold">
+              {emptyMealSlots.length > 0 ? `还差 ${emptyMealSlots.length} 个餐段没安排` : `待买 ${groceryItems.length} 样食材`}
+            </p>
           </div>
           <button
             className="rounded-full bg-[#ffb764] px-5 py-3 text-sm font-semibold text-[#15211d] disabled:cursor-not-allowed disabled:opacity-40"
@@ -512,6 +633,107 @@ export function MealWheelPage() {
           </button>
         </div>
       </div>
+
+      {detailDish ? (
+        <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 px-3 pb-3 pt-10 sm:items-center sm:px-6 sm:py-6">
+          <button aria-label="关闭菜品详情" className="absolute inset-0" onClick={() => setDetailDish(null)} type="button" />
+          <section className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[32px] bg-white shadow-[0_30px_80px_rgba(12,18,15,0.28)]">
+            <div
+              className="px-5 py-5 text-white sm:px-6"
+              style={{ background: `linear-gradient(135deg, ${mealConfig[detailDish.slot].accent} 0%, #15211d 100%)` }}
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/72">{mealConfig[detailDish.slot].label}</p>
+                  <h2 className="mt-2 text-3xl font-semibold">{detailDish.name}</h2>
+                  <p className="mt-3 max-w-xl text-sm leading-7 text-white/82">{detailDish.description}</p>
+                </div>
+                <button
+                  className="rounded-full bg-white/14 px-4 py-2 text-sm font-semibold text-white"
+                  onClick={() => setDetailDish(null)}
+                  type="button"
+                >
+                  关闭
+                </button>
+              </div>
+            </div>
+
+            <div className="grid gap-0 sm:grid-cols-[1.05fr_0.95fr]">
+              <div className="border-b border-black/6 px-5 py-5 sm:border-b-0 sm:border-r sm:px-6">
+                <div className="flex flex-wrap gap-2">
+                  <DetailBadge label={detailDish.tag} tone="dark" />
+                  <DetailBadge label={`准备 ${detailDish.prepTime}`} />
+                  <DetailBadge label={`难度 ${detailDish.difficulty}`} />
+                </div>
+
+                <h3 className="mt-5 text-lg font-semibold text-ink">要买这些</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {detailDish.ingredients.map((ingredient) => (
+                    <span className="rounded-full bg-black/[0.05] px-3 py-1.5 text-sm font-medium text-ink" key={ingredient}>
+                      {ingredient}
+                    </span>
+                  ))}
+                </div>
+
+                <h3 className="mt-5 text-lg font-semibold text-ink">做饭提醒</h3>
+                <p className="mt-2 text-sm leading-7 text-muted">{detailDish.cookNote}</p>
+              </div>
+
+              <div className="px-5 py-5 sm:px-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted">当前状态</p>
+                <div className="mt-3 rounded-[24px] bg-[linear-gradient(180deg,#fff9ef_0%,#fffdf8_100%)] p-4">
+                  <p className="text-sm text-muted">已加入清单</p>
+                  <p className="mt-2 text-3xl font-semibold text-ink">{cart[detailDish.id] ?? 0} 份</p>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-ink">这次加入几份</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[1, 2, 3].map((serving) => (
+                      <button
+                        className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                          detailServings === serving ? "bg-ink text-white" : "bg-black/[0.05] text-ink"
+                        }`}
+                        key={serving}
+                        onClick={() => setDetailServings(serving)}
+                        type="button"
+                      >
+                        {serving} 人份
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-3 rounded-full bg-ink px-3 py-3 text-white">
+                  <button
+                    className="text-lg disabled:cursor-not-allowed disabled:opacity-40"
+                    disabled={(cart[detailDish.id] ?? 0) <= 0}
+                    onClick={() => changeCartCount(detailDish.id, (cart[detailDish.id] ?? 0) - 1)}
+                    type="button"
+                  >
+                    -
+                  </button>
+                  <span className="min-w-8 text-center text-sm font-semibold">{cart[detailDish.id] ?? 0} 份</span>
+                  <button className="text-lg" onClick={addDishFromDetail} type="button">
+                    +
+                  </button>
+                </div>
+
+                <button
+                  className="mt-4 inline-flex min-h-14 w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,#15211d_0%,#2f6fed_100%)] px-5 text-base font-semibold text-white shadow-[0_18px_32px_rgba(21,33,29,0.18)]"
+                  onClick={() => {
+                    addDishFromDetail();
+                    setCartOpen(true);
+                  }}
+                  type="button"
+                >
+                  加 {detailServings} 份并查看购物车
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {cartOpen ? (
         <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 px-3 pb-3 pt-10 sm:items-center sm:px-6 sm:py-6">
@@ -551,31 +773,37 @@ export function MealWheelPage() {
                 </div>
 
                 <div className="mt-4 space-y-3">
-                  {cartItems.map((item) => (
-                    <div className="rounded-[22px] border border-black/6 bg-[#fcfcfa] p-4" key={item.dish.id}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-ink">{item.dish.name}</p>
-                          <p className="mt-1 text-sm text-muted">
-                            {mealConfig[item.dish.slot].label} · {item.dish.prepTime}
-                          </p>
-                        </div>
-                        <span className="rounded-full bg-black/[0.04] px-3 py-1 text-xs font-semibold text-muted">{item.dish.tag}</span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="text-sm text-muted">{item.dish.ingredients.join(" · ")}</p>
-                        <div className="flex items-center gap-3 rounded-full bg-ink px-3 py-2 text-white">
-                          <button className="text-lg" onClick={() => changeCartCount(item.dish.id, item.count - 1)} type="button">
-                            -
+                  {cartItems.length > 0 ? (
+                    cartItems.map((item) => (
+                      <div className="rounded-[22px] border border-black/6 bg-[#fcfcfa] p-4" key={item.dish.id}>
+                        <div className="flex items-start justify-between gap-3">
+                          <button className="text-left" onClick={() => openDishDetail(item.dish)} type="button">
+                            <p className="font-semibold text-ink">{item.dish.name}</p>
+                            <p className="mt-1 text-sm text-muted">
+                              {mealConfig[item.dish.slot].label} · {item.dish.prepTime}
+                            </p>
                           </button>
-                          <span className="min-w-8 text-center text-sm font-semibold">{item.count} 份</span>
-                          <button className="text-lg" onClick={() => changeCartCount(item.dish.id, item.count + 1)} type="button">
-                            +
-                          </button>
+                          <span className="rounded-full bg-black/[0.04] px-3 py-1 text-xs font-semibold text-muted">{item.dish.tag}</span>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <p className="text-sm text-muted">{item.dish.ingredients.join(" · ")}</p>
+                          <div className="flex items-center gap-3 rounded-full bg-ink px-3 py-2 text-white">
+                            <button className="text-lg" onClick={() => changeCartCount(item.dish.id, item.count - 1)} type="button">
+                              -
+                            </button>
+                            <span className="min-w-8 text-center text-sm font-semibold">{item.count} 份</span>
+                            <button className="text-lg" onClick={() => changeCartCount(item.dish.id, item.count + 1)} type="button">
+                              +
+                            </button>
+                          </div>
                         </div>
                       </div>
+                    ))
+                  ) : (
+                    <div className="rounded-[22px] border border-dashed border-black/10 bg-[#fafaf6] px-4 py-10 text-center text-sm text-muted">
+                      还没加入菜品，先回列表挑几道想做的。
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -585,6 +813,31 @@ export function MealWheelPage() {
                   <span className="rounded-full bg-black/[0.04] px-3 py-1.5 text-sm text-muted">
                     {groceryItems.length > 0 ? `${checkedCount}/${groceryItems.length}` : "未生成"}
                   </span>
+                </div>
+
+                <div className="mt-4 rounded-[18px] border border-black/6 bg-[#fcfcfa] p-3">
+                  <p className="text-sm font-semibold text-ink">手动补一项</p>
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      className="min-w-0 flex-1 rounded-full border border-black/8 bg-white px-4 py-2.5 text-sm text-ink outline-none"
+                      onChange={(event) => setCustomIngredientInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          addCustomIngredient();
+                        }
+                      }}
+                      placeholder="比如可乐、酸奶、一次性手套"
+                      value={customIngredientInput}
+                    />
+                    <button
+                      className="rounded-full bg-[#15211d] px-4 py-2.5 text-sm font-semibold text-white"
+                      onClick={addCustomIngredient}
+                      type="button"
+                    >
+                      添加
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 space-y-2">
@@ -609,7 +862,35 @@ export function MealWheelPage() {
                             {checked ? "✓" : ""}
                           </span>
                           <span className="flex-1 text-sm font-medium">{item.name}</span>
+                          {item.customCount > 0 ? (
+                            <span className="rounded-full bg-[#fff1ea] px-2 py-1 text-[11px] font-semibold text-[#d96c46]">
+                              自填
+                            </span>
+                          ) : null}
                           <span className="text-xs text-muted">x{item.count}</span>
+                          {item.customCount > 0 ? (
+                            <span className="flex items-center gap-2 rounded-full bg-black/[0.05] px-2 py-1 text-xs text-ink">
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  changeCustomGroceryCount(item.name, item.customCount - 1);
+                                }}
+                                type="button"
+                              >
+                                -
+                              </button>
+                              <span>{item.customCount}</span>
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  changeCustomGroceryCount(item.name, item.customCount + 1);
+                                }}
+                                type="button"
+                              >
+                                +
+                              </button>
+                            </span>
+                          ) : null}
                         </button>
                       );
                     })
@@ -641,5 +922,17 @@ function SummaryCard({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/64">{label}</p>
       <p className="mt-2 text-sm font-semibold text-white">{value}</p>
     </div>
+  );
+}
+
+function DetailBadge({ label, tone = "light" }: { label: string; tone?: "light" | "dark" }) {
+  return (
+    <span
+      className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+        tone === "dark" ? "bg-[#15211d] text-white" : "bg-black/[0.05] text-ink"
+      }`}
+    >
+      {label}
+    </span>
   );
 }
