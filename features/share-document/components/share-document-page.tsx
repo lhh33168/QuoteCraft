@@ -43,8 +43,7 @@ export function ShareDocumentPage({
   const printPageHref = `/share/${token}?print=1` as Route;
   const exportPdfHref = `/api/share/${token}/export-pdf` as Route;
   const workspaceHref = "/workspace" as Route;
-  const loginHref = "/login" as Route;
-  const loginWithNextHref = "/login?next=/workspace" as Route;
+  const loginHref = "/" as Route;
   const createProjectHref = "/projects/new" as Route;
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [navigationState, setNavigationState] = useState<NavigationState>("idle");
@@ -64,7 +63,6 @@ export function ShareDocumentPage({
     router.prefetch(printPageHref);
     router.prefetch(workspaceHref);
     router.prefetch(loginHref);
-    router.prefetch(loginWithNextHref);
     router.prefetch(createProjectHref);
   }
 
@@ -407,23 +405,6 @@ export function ShareDocumentPage({
                     </>
                   ) : (
                     <>
-                      <button
-                        className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
-                        onClick={() => handleNavigate("login", loginWithNextHref)}
-                        onFocus={prefetchTargets}
-                        onMouseEnter={prefetchTargets}
-                        onTouchStart={prefetchTargets}
-                        type="button"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <ButtonLoadingContent
-                            idleLabel={t("share.loginToCreateProject")}
-                            loading={navigationState === "login"}
-                            loadingLabel={t("workspace.creatingProject")}
-                            spinnerTone="dark"
-                          />
-                        </span>
-                      </button>
                       <button
                         className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full border border-black/10 bg-white px-5 text-sm font-semibold text-ink"
                         onClick={() => handleNavigate("login", loginHref)}

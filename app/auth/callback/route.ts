@@ -45,10 +45,9 @@ export async function GET(request: NextRequest) {
   }
 
   if (errorDescription) {
-    const loginUrl = new URL("/login", requestUrl.origin);
-    loginUrl.searchParams.set("next", next);
-    loginUrl.searchParams.set("error", mapCallbackError(errorDescription, t));
-    return NextResponse.redirect(loginUrl);
+    const homeUrl = new URL("/", requestUrl.origin);
+    homeUrl.searchParams.set("error", mapCallbackError(errorDescription, t));
+    return NextResponse.redirect(homeUrl);
   }
 
   const response = NextResponse.redirect(redirectUrl);
@@ -62,10 +61,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      const loginUrl = new URL("/login", requestUrl.origin);
-      loginUrl.searchParams.set("next", next);
-      loginUrl.searchParams.set("error", mapCallbackError(error.message, t));
-      return NextResponse.redirect(loginUrl);
+      const homeUrl = new URL("/", requestUrl.origin);
+      homeUrl.searchParams.set("error", mapCallbackError(error.message, t));
+      return NextResponse.redirect(homeUrl);
     }
   } else if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({
@@ -74,10 +72,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (error) {
-      const loginUrl = new URL("/login", requestUrl.origin);
-      loginUrl.searchParams.set("next", next);
-      loginUrl.searchParams.set("error", mapCallbackError(error.message, t));
-      return NextResponse.redirect(loginUrl);
+      const homeUrl = new URL("/", requestUrl.origin);
+      homeUrl.searchParams.set("error", mapCallbackError(error.message, t));
+      return NextResponse.redirect(homeUrl);
     }
   }
 

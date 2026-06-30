@@ -419,7 +419,7 @@ const en = {
     printPreviewTitle: "PDF Export Preview",
     backToProposal: "Back to Proposal",
     backToWorkspace: "Back to Workspace",
-    backToLogin: "Back to Login",
+    backToLogin: "Back to Home",
     printGuideEyebrow: "Export Guide",
     printGuideTitle: "You are viewing the print-friendly page for PDF export.",
     printGuideProcessing: "Exporting",
@@ -480,7 +480,7 @@ const en = {
     backToWorkspaceButton: "Back to Workspace",
     createFormalProject: "Create Formal Project",
     loginToCreateProject: "Log in to create your own proposal",
-    backToLoginButton: "Back to Login Page",
+    backToLoginButton: "Back to Home",
     readonlyNotice: "This is a read-only share page. Clients can review the proposal and pricing but cannot edit your project data."
   },
   print: {

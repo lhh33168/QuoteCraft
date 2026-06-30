@@ -15,6 +15,7 @@
     "cap:add:ios": "cap add ios",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
+    "ios:release:preflight": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ios/release-preflight.ps1",
     "android:assemble:debug": "cd android && gradlew.bat assembleDebug",
     "android:assemble:release": "cd android && gradlew.bat assembleRelease",
     "android:bundle:release": "cd android && gradlew.bat bundleRelease",

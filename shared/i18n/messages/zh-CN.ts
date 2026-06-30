@@ -324,7 +324,7 @@ const zhCN = {
     printPreviewTitle: "PDF 导出预览",
     backToProposal: "返回方案页",
     backToWorkspace: "返回工作台",
-    backToLogin: "返回登录",
+    backToLogin: "返回首页",
     printGuideEyebrow: "导出指引",
     printGuideTitle: "当前正在查看适合导出 PDF 的打印预览页。",
     printGuideProcessing: "导出进行中",
@@ -381,7 +381,7 @@ const zhCN = {
     backToWorkspaceButton: "返回项目工作台",
     createFormalProject: "新建正式项目",
     loginToCreateProject: "登录后创建自己的方案",
-    backToLoginButton: "返回登录页",
+    backToLoginButton: "返回首页",
     readonlyNotice: "当前是只读分享页，客户可以查看方案和报价，但不会修改你的项目数据。"
   },
   print: {

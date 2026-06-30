@@ -19,9 +19,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isProtected && !sessionState.authenticated) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return sessionState.response;
